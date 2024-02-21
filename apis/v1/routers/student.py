@@ -4,7 +4,6 @@ from database.database import *
 from models.student import Student
 from schemas.student import Response, UpdateStudentModel
 
-
 router = APIRouter()
 
 
@@ -19,7 +18,9 @@ async def get_students():
     }
 
 
-@router.get("/{id}", response_description="Student data retrieved", response_model=Response)
+@router.get(
+    "/{id}", response_description="Student data retrieved", response_model=Response
+)
 async def get_student_data(id: PydanticObjectId):
     student = await retrieve_student(id)
     if student:
@@ -64,7 +65,7 @@ async def delete_student_data(id: PydanticObjectId):
     return {
         "status_code": 404,
         "response_type": "error",
-        "description": "Student with id {0} doesn't exist".format(id),
+        "description": "Student with id {} doesn't exist".format(id),
         "data": False,
     }
 

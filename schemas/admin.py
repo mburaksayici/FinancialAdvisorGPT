@@ -1,6 +1,8 @@
-from pydantic import BaseModel
+from typing import Optional
+
 from fastapi.security import HTTPBasicCredentials
-from pydantic import EmailStr
+from pydantic import BaseModel, EmailStr
+
 
 class AdminSignIn(HTTPBasicCredentials):
     class Config:
@@ -20,3 +22,8 @@ class AdminData(BaseModel):
                 "email": "abdul@youngest.dev",
             }
         }
+
+
+class ChatRequest(BaseModel):
+    pdf_link: Optional[str]
+    query: str
