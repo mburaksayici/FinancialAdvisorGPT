@@ -10,7 +10,7 @@ from schemas.admin import AdminData, AdminSignIn, ChatRequest
 
 model_driver = ModelDriver()
 model_driver.set_pdf_loader("PyPDFLoader")
-model_driver.load_model("mistral")
+model_driver.load_model("mistral-api")
 router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
