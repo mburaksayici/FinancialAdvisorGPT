@@ -53,7 +53,7 @@ class ModelDriver:
 
     def load_document(self, document_link, is_bytes=False):
         # document_link = "https://www.apple.com/newsroom/pdfs/FY23_Q1_Consolidated_Financial_Statements.pdf"
-        if is_bytes:
+        if not is_bytes:
             loader = self.loader("uploaded_files/" + document_link)
         else:
             loader = self.loader(document_link)
