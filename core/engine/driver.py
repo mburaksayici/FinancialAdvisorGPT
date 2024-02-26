@@ -9,7 +9,8 @@ from langchain.vectorstores import Chroma
 from langchain_core.callbacks.base import BaseCallbackHandler
 
 from core.engine.data_pipelines.pdf_pipelines import pdf_loader_factory
-from core.engine.llm_models.mistral_7b_engine import Mistral7BInstructModel
+
+# from core.engine.llm_models.mistral_7b_engine import Mistral7BInstructModel
 from core.engine.llm_models.mistral_api_engine import MistralAPIModel
 from core.engine.text_utils.text_utils import text_splitter_factory
 
@@ -64,10 +65,10 @@ class ModelDriver:
         )
 
     def load_model(self, model_name):  # TO DO : Move model DB to mongo.
-        if model_name == "mistral":
-            self.model = Mistral7BInstructModel(
-                ""
-            ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
+        # if model_name == "mistral":
+        #    self.model = Mistral7BInstructModel(
+        #        ""
+        #    ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
         if model_name == "mistral-api":
             print("using api model")
             self.model = MistralAPIModel(
@@ -109,3 +110,53 @@ class ModelDriver:
             yield chunk["result"]
         # else:F
         #    return qa_chain({"query": query})['result']
+
+
+from langchain.chains import LLMChain
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+
+# TO DO : Reduce model drivers to one. Or, may be we can have two drivers.
+class ChainLLMModel:  # TO DO : Better name
+    def __init__(self, model="mistral-api") -> None:
+        self.load_model(model)
+        self.set_embedding()  # to be fixed later
+        self.set_pdf_loader()  # to be fixed later
+        self.set_textsplitter()  # to be fixed later
+        self.set_embedding()  # to be fixed later
+
+    def set_textsplitter(self, text_splitter="RecursiveCharacterTextSplitter"):
+        self.text_splitter = text_splitter_factory(text_splitter=text_splitter)
+        # all_splits = text_splitter.split_documents(data)
+
+    def set_pdf_loader(self, loader="OnlinePDFLoader"):
+        self.loader = pdf_loader_factory(loader=loader)
+
+    def set_embedding(self, embedding="HuggingFaceEmbeddings"):
+        self.embedding = HuggingFaceEmbeddings()
+
+    def load_model(self, model_name):  # TO DO : Move model DB to mongo.
+        if model_name == "mistral-api":
+            print("using api model")
+            self.model = MistralAPIModel(
+                ""
+            ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
+
+    async def chat(
+        self,
+        query,
+        streaming=True,
+    ):
+        qa_chain = RetrievalQA.from_chain_type(
+            self.model,
+            chain_type_kwargs={"prompt": self.QA_CHAIN_PROMPT},
+        )
+        # if streaming:
+        async for chunk in qa_chain.astream({"query": query}):
+            yield chunk["result"]
+
+    def nonasync_chat(self, query, prompt_template):
+
+        chain = LLMChain(llm=self.model, prompt=prompt_template)
+
+        return chain.run(query)  # qa_chain({"query": query})['result']

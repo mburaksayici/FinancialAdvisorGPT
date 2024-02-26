@@ -1,0 +1,99 @@
+import ast
+
+from langchain import PromptTemplate
+
+from base.base_datachain import AbstractDataChain
+from core.engine.data_pipelines.news.news_pipelines import NewsPipeline
+from core.engine.driver import ChainLLMModel
+
+template = """I would like you to give me python list object, by  understanding a context. You are a financial analyst, so you can classify the financial data request.
+
+You are only allowed to respond either [] or the Python list of dictionaries based on the rules!
+
+
+News can have a significant impact on financial analysis and the financial markets in several ways:
+
+Market Sentiment: News often influences investor sentiment, which can drive buying or selling activity in the markets. Positive news, such as strong earnings reports or favorable economic indicators, tends to boost investor confidence and lead to higher stock prices, while negative news, such as poor economic data or geopolitical tensions, can cause fear and uncertainty, resulting in market declines.
+Price Movements: News events can directly affect the prices of financial assets, including stocks, bonds, currencies, and commodities. For example, a company announcing better-than-expected earnings may cause its stock price to rise, while news of a natural disaster affecting commodity production may lead to price spikes in the affected commodities.
+Volatility: News can increase market volatility as investors react to new information. Sudden and unexpected news events, such as political developments or corporate scandals, can lead to sharp price fluctuations as investors reassess the impact of the news on asset valuations and market conditions.
+Fundamental Analysis: News provides valuable information for fundamental analysis, which involves evaluating the financial health and performance of companies and economies. Analysts use news to update their earnings forecasts, assess industry trends, and make investment recommendations based on changes in business fundamentals.
+Risk Management: News can impact risk management strategies by highlighting potential risks and opportunities in the markets. Traders and investors may adjust their portfolio allocations or implement hedging strategies in response to news events that could impact their investments.
+Policy Decisions: News related to central bank decisions, government policies, and regulatory changes can have a significant impact on financial markets. For example, announcements of interest rate decisions or changes in monetary policy can influence borrowing costs, exchange rates, and asset prices.
+Psychological Factors: News can also affect investor psychology and behavior, leading to herd mentality, irrational exuberance, or panic selling. Behavioral biases, such as anchoring or confirmation bias, may influence how investors interpret and react to news events, potentially amplifying market movements.
+
+Here's one example of how news can impact financial analysis: Initial Vaccine Announcements (November 2020): When pharmaceutical companies like Pfizer and Moderna announced promising results from their COVID-19 vaccine trials, global financial markets responded positively. Stock markets rallied, with shares of companies in sectors most affected by the pandemic, such as travel, hospitality, and retail, experiencing significant gains. Investors became more optimistic about the prospect of a swift economic recovery as vaccination efforts ramped up.
+
+I'll give a context (or question) that there may be news published related to the context, which can help in financial analysis. Given a context, you'll give me a python list based on the rules. Here are some rules.
+1. If you think there's nothing to get from news, just return an empty list, []. For example, if the context is "I want to see the balance sheet of TSLA", you need to return []. I will search these kind of information by myself.
+2. If there is, you need to return a list of dictionaries, example: [{{"query":query, "sortBy":sortBy, "country":country, "from":from_}}].
+3. sortBy, is either popularity, or ascending, or descending. If there's no sortBy, you can return popularity.
+4. If there's a country that you want to search for, you can return the country, such as us. The 2-letter ISO 3166-1 code of the country you want to get headlines for. If no country, don't place country to the dictionary.
+5. If there's a news search query that you would like to search, you need to set {{"query":query}}. It can be "query":"Apple" in python dict.
+6. Please also add why you think the news is important for the context in one small sentence. For example, if the context is "I want to see if TESLA is able to produce batteries", you may to return [{{"query":"Lithium Stocks", "sortBy":"popularity", "country":"us", "description":"Tesla battery production is bounded to the lithium shortage."}}].
+7. Example: [{{"query":"Apple", "sortBy":"popularity", "country":"us", "from":"2021-10-10"}}]
+
+Dont ever answer any comment. Just give me the python list based on the rules! Dont ever give any comment! Just give me the python list based on the rules! If you can't find anything, just return an empty list, [] !
+You are only allowed to respond either [] or the Python list of dictionaries based on the rules!
+
+
+Here's the context : {context}
+
+"""
+# 5. If there's a date you want to search for, you can return the date, such as 2021-10-10. The date and time of the oldest article you want to get. If no date, don't place from to the dictionary.
+
+
+PROMPT_TEMPLATE = PromptTemplate(
+    input_variables=["context"],
+    template=template,
+)
+
+
+class NewsDataChain(AbstractDataChain):
+    """
+    Class that allows RAG to retrieve online data.
+
+    """
+
+    def __init__(
+        self, model: ChainLLMModel, prompt_template: PromptTemplate = PROMPT_TEMPLATE
+    ) -> None:
+        self.model = model
+        self.prompt_template = prompt_template
+        self.news_pipeline = NewsPipeline()
+
+    def chat(self, context):
+        return self.model.nonasync_chat(context, prompt_template=self.prompt_template)
+
+    def get_data(self, context, return_augmented_prompt=True):
+
+        response = self.chat(context)
+        news_pipeline_parameters = ast.literal_eval(response)
+
+        data = list()
+        for parameter in news_pipeline_parameters:
+            query = parameter["query"]
+            sortBy = parameter["sortBy"]
+
+            country = parameter["country"] if "country" in parameter else None
+            description = (
+                parameter["description"] if "description" in parameter else None
+            )
+
+            response = self.news_pipeline.query(
+                query=query, sortBy=sortBy, country=country
+            )
+            data.append(
+                {"query": query, "description": description, "response": response}
+            )
+
+        if return_augmented_prompt:
+
+            augmented_prompt = """Here's the news I found for you. Please cite the resources with links and dates if it's given. : """
+
+            for new in data:
+                augmented_prompt += f"""I found the news below because {new["description"]} . Those news are : \n"""
+                augmented_prompt += f"""{str(new["response"])}\n"""
+            print(augmented_prompt)
+            return augmented_prompt
+
+        return data
