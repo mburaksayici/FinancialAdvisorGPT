@@ -58,7 +58,7 @@ if st.button("Send"):
             st.session_state["uploaded_filename"], input_text
         )
         # conversation_list += "\nYou: " + input_text + "\nBot: " + response + "\n"
-        st.markdown(response.content.decode("utf-8"))
+        st.write(response.content.decode("utf-8"))
 
     else:
         st.warning("Please enter a message.")

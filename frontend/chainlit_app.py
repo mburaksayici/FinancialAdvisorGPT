@@ -10,6 +10,8 @@ import chainlit as cl
 from core.engine.driver import ModelDriver
 
 model_driver = ModelDriver()
+model_driver.set_pdf_loader("PyPDFLoader")
+model_driver.load_model("mistral-api")
 
 
 @cl.password_auth_callback
@@ -26,8 +28,6 @@ def auth_callback(username: str, password: str):
 
 @cl.on_chat_start
 async def on_chat_start():
-    model_driver.set_pdf_loader("PyPDFLoader")
-    model_driver.load_model("mistral-api")
 
     # Sending an image with the local file path
     await cl.Message(

@@ -3,7 +3,6 @@ News Pipelines that uses https://newsapi.org/docs/get-started
 
 """
 import os
-
 import requests
 
 news_api_key = os.getenv(

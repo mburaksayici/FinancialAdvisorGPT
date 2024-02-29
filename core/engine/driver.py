@@ -70,7 +70,6 @@ class ModelDriver:
         #        ""
         #    ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
         if model_name == "mistral-api":
-            print("using api model")
             self.model = MistralAPIModel(
                 ""
             ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
@@ -137,7 +136,6 @@ class ChainLLMModel:  # TO DO : Better name
 
     def load_model(self, model_name):  # TO DO : Move model DB to mongo.
         if model_name == "mistral-api":
-            print("using api model")
             self.model = MistralAPIModel(
                 ""
             ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.

@@ -1,6 +1,7 @@
 import logging
 from queue import Empty
 from threading import Thread
+import traceback
 
 from langchain import PromptTemplate
 from langchain.chains import RetrievalQA
@@ -21,17 +22,15 @@ class OnlineModelDriver:
         self,
     ):
         return """
-    I would like you to create a detailed report. Please use and cite the sources with the links/infos/urls/authors I've shared, Report should be based on the financial document I'm giving you between two *** . It is at the below.
-
-
+    I would like you to create a small report on a question. Here's the my  question for you : {question}
+    Please use and cite the sources with the links/infos/urls/authors I've shared, Report should be based on the financial document I'm giving you between two *** . It is at the below.
 ***
 
  {context}
 
 ***
 
-    
-    Here's the additional question: {question}
+    There are other resources for you to use to answer the question : {question} .
 
     """
 
@@ -90,13 +89,10 @@ class OnlineModelDriver:
         query,
         streaming=True,
     ):
-
         if self.data_chain_driver.data_chains:  # Fix later.
             enriched_prompt = self.data_chain_driver.get_augmented_prompt(query)
-
         template = self.get_template()
         template += enriched_prompt
-
         qa_chain_prompt = self.get_qa_chain_prompt(template)
 
         qa_chain = RetrievalQA.from_chain_type(
@@ -111,4 +107,8 @@ class OnlineModelDriver:
         # ):  #         async for chunk in qa_chain.astream({"query": query}):
         #    yield chunk["result"]
         # else:F
-        return qa_chain({"query": query})["result"]
+        try:
+            result = qa_chain({"query": query})["result"]
+            return result
+        except Exception:
+            logging.error(traceback.format_exc())

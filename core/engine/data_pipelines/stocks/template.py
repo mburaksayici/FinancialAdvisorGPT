@@ -59,7 +59,7 @@ class StockDataChain(AbstractDataChain):
 
         response = self.chat(context)
         stock_pipeline_parameters = ast.literal_eval(response)
-
+        print("searching this stock: ", stock_pipeline_parameters)
         data = list()
 
         for parameter in stock_pipeline_parameters:
@@ -86,8 +86,6 @@ class StockDataChain(AbstractDataChain):
             for stock in data:
                 augmented_prompt += f"""I found the stock data below because {stock["description"]} . Those stock data are : \n"""
                 augmented_prompt += f"""{str(stock["response"])}\n"""
-            print(augmented_prompt)
-
             return augmented_prompt
 
         return data

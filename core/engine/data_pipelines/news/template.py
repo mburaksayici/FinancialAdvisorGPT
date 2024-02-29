@@ -5,6 +5,7 @@ from langchain import PromptTemplate
 from base.base_datachain import AbstractDataChain
 from core.engine.data_pipelines.news.news_pipelines import NewsPipeline
 from core.engine.driver import ChainLLMModel
+from core.engine.data_pipelines.summarizer.template import SummarizerChain
 
 template = """I would like you to give me python list object, by  understanding a context. You are a financial analyst, so you can classify the financial data request.
 
@@ -60,14 +61,16 @@ class NewsDataChain(AbstractDataChain):
         self.model = model
         self.prompt_template = prompt_template
         self.news_pipeline = NewsPipeline()
+        self.summarizer_chain = SummarizerChain(model)
 
     def chat(self, context):
         return self.model.nonasync_chat(context, prompt_template=self.prompt_template)
 
     def get_data(self, context, return_augmented_prompt=True):
-
+        print("news obtaining")
         response = self.chat(context)
         news_pipeline_parameters = ast.literal_eval(response)
+        print("searching this news: ", news_pipeline_parameters)
 
         data = list()
         for parameter in news_pipeline_parameters:
@@ -88,12 +91,22 @@ class NewsDataChain(AbstractDataChain):
 
         if return_augmented_prompt:
 
+            if len(data) == 0:
+                return "I couldn't find any news for you. Please try another context."
             augmented_prompt = """Here's the news I found for you. Please cite the resources with links and dates if it's given. : """
 
             for new in data:
-                augmented_prompt += f"""I found the news below because {new["description"]} . Those news are : \n"""
-                augmented_prompt += f"""{str(new["response"])}\n"""
-            print(augmented_prompt)
+                if new["response"]["totalResults"] != 0:
+                    augmented_prompt += f"""I found the news below because {new["description"]} . Those news are : \n"""
+                    for article in new["response"]["articles"]:
+                        content = str(article["content"])
+                        if len(content) > 750:  # Skip if content is too long
+                            continue
+                        if (
+                            len(content) > 150
+                        ):  # If exceeds 50 words (roughly 250 characters), summarize
+                            content = self.summarizer_chain.get_data(content)
+                        augmented_prompt += f"""Date : {article["publishedAt"]} , url : {article["url"]} , content : {content}\n"""
             return augmented_prompt
 
         return data

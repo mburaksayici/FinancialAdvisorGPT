@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 from auth.jwt_handler import sign_jwt
 from core.engine.data_pipelines.news.template import NewsDataChain
 from core.engine.data_pipelines.stocks.template import StockDataChain
+from core.engine.data_pipelines.db_retrieval.template import DBRetrievalChain
 
 # from core.engine.model_driver import ModelDriver
 from core.engine.online_model_driver import OnlineModelDriver
@@ -15,7 +16,7 @@ from schemas.admin import AdminData, AdminSignIn, ChatRequest
 model_driver = OnlineModelDriver()
 model_driver.set_pdf_loader("PyPDFLoader")
 model_driver.load_model("mistral-api")
-model_driver.set_data_chains([NewsDataChain, StockDataChain])
+model_driver.set_data_chains([DBRetrievalChain, NewsDataChain, StockDataChain])
 router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
