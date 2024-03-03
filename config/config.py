@@ -28,3 +28,11 @@ class MongoConfig:
     )  # ?authSource=admin&ssl=true&replicaSet=globaldb"
     MONGODB_PORT = os.getenv("MONGODB_PORT", "27017")
     MONGO_URL = DATABASE_URL = f"mongodb://{MONGODB_HOST}:{MONGODB_PORT}/finsean"
+
+
+class RedisConfig:
+
+    REDIS_HOST = os.getenv(
+        "REDIS_HOST", "localhost"
+    )  # ?authSource=admin&ssl=true&replicaSet=globaldb"
+    REDIS_PORT = os.getenv("REDIS_PORT", "6379")  # NOTE : Those configs can be merged.
