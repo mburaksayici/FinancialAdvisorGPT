@@ -27,18 +27,19 @@ Here's one example of how news can impact financial analysis: Initial Vaccine An
 I'll give a context (or question) that there may be news published related to the context, which can help in financial analysis. Given a context, you'll give me a python list based on the rules. Here are some rules.
 1. If you think there's nothing to get from news, just return an empty list, []. For example, if the context is "I want to see the balance sheet of TSLA", you need to return []. I will search these kind of information by myself.
 2. If there is, you need to return a list of dictionaries, example: [{{"query":query, "sortBy":sortBy, "country":country, "from":from_}}].
-3. sortBy, is either popularity, or ascending, or descending. If there's no sortBy, you can return popularity.
+3. sortBy, The order to sort the articles in. Possible options: relevancy , popularity , publishedAt . relevancy = articles more closely related to q come first. popularity = articles from popular sources and publishers come first. publishedAt = newest articles come first.  For example, if you would like to get latest news, use publishedAt .
 4. If there's a country that you want to search for, you can return the country, such as us. The 2-letter ISO 3166-1 code of the country you want to get headlines for. If no country, don't place country to the dictionary.
 5. If there's a news search query that you would like to search, you need to set {{"query":query}}. It can be "query":"Apple" in python dict.
 6. Please also add why you think the news is important for the context in one small sentence. For example, if the context is "I want to see if TESLA is able to produce batteries", you may to return [{{"query":"Lithium Stocks", "sortBy":"popularity", "country":"us", "description":"Tesla battery production is bounded to the lithium shortage."}}].
-7. Example: [{{"query":"Apple", "sortBy":"popularity", "country":"us", "from":"2021-10-10"}}]
+7. Response Example: [{{"query":"Apple", "sortBy":"publishedAt", "country":"us", "from":"2021-10-10"}}]
+8. Response Example: [{{"query":"Tesla", "sortBy":"popularity", "country":"tr", "from":"2020-10-10"}}]
 
 Dont ever answer any comment. Just give me the python list based on the rules! Dont ever give any comment! Just give me the python list based on the rules! If you can't find anything, just return an empty list, [] !
 You are only allowed to respond either [] or the Python list of dictionaries based on the rules!
 
 
 Here's the context : {context}
-
+Python list response answer : 
 """
 # 5. If there's a date you want to search for, you can return the date, such as 2021-10-10. The date and time of the oldest article you want to get. If no date, don't place from to the dictionary.
 
@@ -103,9 +104,11 @@ class NewsDataChain(AbstractDataChain):
                         if len(content) > 750:  # Skip if content is too long
                             continue
                         if (
-                            len(content) > 150
+                            len(content) > 100
                         ):  # If exceeds 50 words (roughly 250 characters), summarize
-                            content = self.summarizer_chain.get_data(content)
+                            content = self.summarizer_chain.get_data(
+                                context=content, word_count=20
+                            )
                         augmented_prompt += f"""Date : {article["publishedAt"]} , url : {article["url"]} , content : {content}\n"""
             return augmented_prompt
 

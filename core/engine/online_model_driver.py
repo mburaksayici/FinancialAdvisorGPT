@@ -8,6 +8,7 @@ from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from langchain_core.callbacks.base import BaseCallbackHandler
+from core.engine.message_prompts.message_prompts import chat_prompt
 
 from core.engine.data_chain_driver import DataChainDriver
 from core.engine.data_pipelines.pdf_pipelines import pdf_loader_factory
@@ -18,34 +19,13 @@ from core.engine.text_utils.text_utils import text_splitter_factory
 
 
 class OnlineModelDriver:
-    def get_template(
-        self,
-    ):
-        return """
-    I would like you to create a small report on a question. Here's the my  question for you : {question}
-    Please use and cite the sources with the links/infos/urls/authors I've shared, Report should be based on the financial document I'm giving you between two *** . It is at the below.
-***
-
- {context}
-
-***
-
-    There are other resources for you to use to answer the question : {question} .
-
-    """
-
-    def get_qa_chain_prompt(self, template):
-        return PromptTemplate(
-            input_variables=["context", "question"],
-            template=template,
-        )
-
     def __init__(self) -> None:
         self.model = None
         self.data_chains = None
         self.set_pdf_loader()  # to be fixed later
         self.set_textsplitter()  # to be fixed later
         self.set_embedding()  # to be fixed later
+        self.chat_prompt = chat_prompt
         self.data_chain_driver = DataChainDriver()
 
     def set_textsplitter(self, text_splitter="RecursiveCharacterTextSplitter"):
@@ -84,7 +64,30 @@ class OnlineModelDriver:
                 ""
             ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
 
-    def chat(
+    def answer(
+        self,
+        query,
+        streaming=True,
+    ):
+        if self.data_chain_driver.data_chains:  # Fix later.
+            enriched_prompt = self.data_chain_driver.get_augmented_prompt(query)
+        formatted_chat_prompt = self.chat_prompt.format_messages(
+            question=query, context=enriched_prompt
+        )
+
+        # if streaming:
+        # async for chunk in qa_chain.astream(
+        #    {"query": query}
+        # ):  #         async for chunk in qa_chain.astream({"query": query}):
+        #    yield chunk["result"]
+        # else:F
+        try:
+            result = self.model.invoke(formatted_chat_prompt)
+            return result
+        except Exception:
+            logging.error(traceback.format_exc())
+
+    def chatt(
         self,
         query,
         streaming=True,

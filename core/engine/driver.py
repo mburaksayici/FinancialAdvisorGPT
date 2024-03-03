@@ -60,6 +60,7 @@ class ModelDriver:
             loader = self.loader(document_link)
         data = loader.load()
         all_splits = self.text_splitter.split_documents(data)
+
         self.vectorstore = Chroma.from_documents(
             documents=all_splits, embedding=self.embedding
         )

@@ -1,4 +1,6 @@
-from models.admin import Admin
-from models.student import Student
+from models.chats.chats import Chats
+from models.users.users import Users
 
-__all__ = [Student, Admin]
+# word after models, defines db name. collection names are defined in inner class of document models, see the class inside User class
+
+__all__ = [Users, Chats]

@@ -1,9 +1,11 @@
 from typing import Optional
+import os
 
-from beanie import init_beanie
-from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 import models as models
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -19,8 +21,10 @@ class Settings(BaseSettings):
         from_attributes = True
 
 
-async def initiate_database():
-    client = AsyncIOMotorClient(Settings().DATABASE_URL)
-    await init_beanie(
-        database=client.get_default_database(), document_models=models.__all__
-    )
+class MongoConfig:
+
+    MONGODB_HOST = os.getenv(
+        "MONGODB_HOST", "localhost"
+    )  # ?authSource=admin&ssl=true&replicaSet=globaldb"
+    MONGODB_PORT = os.getenv("MONGODB_PORT", "27017")
+    MONGO_URL = DATABASE_URL = f"mongodb://{MONGODB_HOST}:{MONGODB_PORT}/finsean"

@@ -56,7 +56,6 @@ class StockDataChain(AbstractDataChain):
         return self.model.nonasync_chat(context, prompt_template=self.prompt_template)
 
     def get_data(self, context, return_augmented_prompt=True):
-
         response = self.chat(context)
         stock_pipeline_parameters = ast.literal_eval(response)
         print("searching this stock: ", stock_pipeline_parameters)

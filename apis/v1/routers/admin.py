@@ -9,8 +9,7 @@ from core.engine.data_pipelines.db_retrieval.template import DBRetrievalChain
 
 # from core.engine.model_driver import ModelDriver
 from core.engine.online_model_driver import OnlineModelDriver
-from database.database import add_admin
-from models.admin import Admin
+from models.users.users import Users
 from schemas.admin import AdminData, AdminSignIn, ChatRequest
 
 model_driver = OnlineModelDriver()
@@ -21,7 +20,7 @@ router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
 
-
+"""
 @router.post("/login")
 async def admin_login(admin_credentials: AdminSignIn = Body(...)):
     admin_exists = await Admin.find_one(Admin.email == admin_credentials.username)
@@ -33,19 +32,16 @@ async def admin_login(admin_credentials: AdminSignIn = Body(...)):
         raise HTTPException(status_code=403, detail="Incorrect email or password")
 
     raise HTTPException(status_code=403, detail="Incorrect email or password")
+"""
 
 
-@router.post("", response_model=AdminData)
-async def admin_signup(admin: Admin = Body(...)):
-    admin_exists = await Admin.find_one(Admin.email == admin.email)
-    if admin_exists:
-        raise HTTPException(
-            status_code=409, detail="Admin with email supplied already exists"
-        )
-
-    admin.password = hash_helper.encrypt(admin.password)
-    new_admin = await add_admin(admin)
-    return new_admin
+@router.post(
+    "/add_user",
+)
+def add_user(user_name, user_password):
+    users_doc = Users(user_name=user_name, user_password=user_password)
+    users_doc.save()
+    return user_name
 
 
 """
@@ -66,9 +62,13 @@ async def chat(pdf_link: str, query: str):
 
 
 @router.get("/chat/")
-def chat(pdf_link: str, query: str):
+def answer(
+    query: str,
+    pdf_link: str = None,
+):
     print("CHATTING")
-    model_driver.load_document(pdf_link)
+    if pdf_link:
+        model_driver.load_document(pdf_link)
 
     return model_driver.chat(query)
 

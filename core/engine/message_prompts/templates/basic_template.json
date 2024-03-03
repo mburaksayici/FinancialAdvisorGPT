@@ -1,0 +1,8 @@
+{
+  "template": "\n    I would like you to create a small report on a question. Here's the my  question for you : {question}\n    Please use and cite the sources with the links/infos/urls/authors I've shared, Report should be based on the financial document I'm giving you between two *** . It is at the below.\n***\n\n {context}\n\n***\n\n    There are other resources for you to use to answer the question : {question} .\n\n    ",
+  "input_variables": [
+    "question",
+    "context"
+  ],
+  "prompt_type": "PromptTemplate"
+}
