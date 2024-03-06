@@ -1,4 +1,5 @@
 import ast
+import asyncio
 
 from langchain import PromptTemplate
 
@@ -10,7 +11,8 @@ from core.engine.data_pipelines.summarizer.template import SummarizerChain
 template = """I would like you to give me python list object, by  understanding a context. You are a financial analyst, so you can classify the financial data request.
 
 You are only allowed to respond either [] or the Python list of dictionaries based on the rules!
-
+Direct answers only. No AI narrator or voice, AI is silent. No AI introduction. No AI summary. No disclaimers or warnings or usage advisories.
+ 
 
 News can have a significant impact on financial analysis and the financial markets in several ways:
 
@@ -36,6 +38,7 @@ I'll give a context (or question) that there may be news published related to th
 
 Dont ever answer any comment. Just give me the python list based on the rules! Dont ever give any comment! Just give me the python list based on the rules! If you can't find anything, just return an empty list, [] !
 You are only allowed to respond either [] or the Python list of dictionaries based on the rules!
+Direct answers only. No AI narrator or voice, AI is silent. No AI introduction. No AI summary. No disclaimers or warnings or usage advisories.
 
 
 Here's the context : {context}
@@ -67,6 +70,11 @@ class NewsDataChain(AbstractDataChain):
     def chat(self, context):
         return self.model.nonasync_chat(context, prompt_template=self.prompt_template)
 
+    async def async_chat(self, context):
+        return await self.model.async_chat(
+            context, prompt_template=self.prompt_template
+        )
+
     def get_data(self, context, return_augmented_prompt=True):
         print("news obtaining")
         response = self.chat(context)
@@ -97,7 +105,7 @@ class NewsDataChain(AbstractDataChain):
             augmented_prompt = """Here's the news I found for you. Please cite the resources with links and dates if it's given. : """
 
             for new in data:
-                if new["response"]["totalResults"] != 0:
+                if new is not None and new["response"]["totalResults"] != 0:
                     augmented_prompt += f"""I found the news below because {new["description"]} . Those news are : \n"""
                     for article in new["response"]["articles"]:
                         content = str(article["content"])
@@ -111,5 +119,69 @@ class NewsDataChain(AbstractDataChain):
                             )
                         augmented_prompt += f"""Date : {article["publishedAt"]} , url : {article["url"]} , content : {content}\n"""
             return augmented_prompt
+
+        return data
+
+    async def aget_data(self, context, return_augmented_prompt=True):
+        print("news obtaining")
+        response = await self.async_chat(context)
+        news_pipeline_parameters = ast.literal_eval(response.replace("'", ""))
+        print("searching this news: ", news_pipeline_parameters)
+
+        data = []
+        tasks = []
+
+        for parameter in news_pipeline_parameters:
+            query = parameter["query"]
+            sortBy = parameter["sortBy"]
+            country = parameter.get("country")
+            description = parameter.get("description")
+
+            task = await self.news_pipeline.aquery(
+                query=query, sortBy=sortBy, country=country
+            )
+            tasks.append(task)
+
+        # Use asyncio.gather to concurrently execute the tasks
+
+        responses = await asyncio.gather(*tasks)
+        print(responses)
+        for parameter, response in zip(news_pipeline_parameters, responses):
+            query = parameter["query"]
+            description = parameter.get("description")
+            data.append(
+                {"query": query, "description": description, "response": response}
+            )
+
+        if return_augmented_prompt:
+
+            augmented_prompts = []
+
+            for new in data:
+                if new is not None and new["response"]["totalResults"] != 0:
+                    augmented_prompt = f"I found the news below because {new['description']} . Those news are : \n"
+                    article_tasks = []
+                    content_list = []
+                    for article in new["response"]["articles"]:
+                        content = str(article["content"])
+                        if len(content) > 750:  # Skip if content is too long
+                            content_list.append(content)
+                        if len(content) > 100:  # If exceeds 100 characters, summarize
+                            task = self.summarizer_chain.aget_data(
+                                context=content, word_count=20
+                            )
+                            article_tasks.append(task)
+                    print(article_tasks, "*********" * 10)
+                    # Use asyncio.gather to concurrently execute the summarizer tasks for articles
+                    content_summaries = await asyncio.gather(*article_tasks)
+                    content_list.extend(content_summaries)
+                    for article, summary in zip(
+                        new["response"]["articles"], content_list
+                    ):
+                        augmented_prompt += f"Date : {article['publishedAt']} , url : {article['url']} , content : {summary}\n"
+
+                    augmented_prompts.append(augmented_prompt)
+
+            return "\n".join(augmented_prompts)
 
         return data

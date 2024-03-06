@@ -1,4 +1,5 @@
 import ast
+import asyncio
 
 from langchain import PromptTemplate
 
@@ -29,6 +30,8 @@ One example, if the context is "I want to see the balance sheet of TSLA", you ne
 
 Dont ever give any comment! Just give me the python list based on the rules! If you can't find anything, just return an empty list, [] !
 You are only allowed to respond either [] or the Python list of dictionaries based on the rules! DONT ADD ANY COMMENT! JUST GIVE ME THE PYTHON LIST BASED ON THE RULES!
+Direct answers only. No AI narrator or voice, AI is silent. No AI introduction. No AI summary. No disclaimers or warnings or usage advisories.
+
 Here's the context : {context}
 """
 
@@ -54,6 +57,11 @@ class StockDataChain(AbstractDataChain):
 
     def chat(self, context):
         return self.model.nonasync_chat(context, prompt_template=self.prompt_template)
+
+    async def async_chat(self, context):
+        return await self.model.async_chat(
+            context, prompt_template=self.prompt_template
+        )
 
     def get_data(self, context, return_augmented_prompt=True):
         response = self.chat(context)
@@ -88,3 +96,39 @@ class StockDataChain(AbstractDataChain):
             return augmented_prompt
 
         return data
+
+    async def aget_data(self, context, return_augmented_prompt=True):
+        response = await self.async_chat(context)
+        stock_pipeline_parameters = ast.literal_eval(response)
+        print("searching this stock: ", stock_pipeline_parameters)
+        tasks = []
+
+        for parameter in stock_pipeline_parameters:
+            task = self.process_parameter(parameter)  # Keep the same
+            tasks.append(task)  # Add await here
+
+        results = await asyncio.gather(*tasks)
+
+        if return_augmented_prompt:
+            augmented_prompt = """Here's the stock data I found for you. Please cite the resources with links and dates if it's given. Those data are provided from Alphavantage : """
+
+            for stock in results:
+                augmented_prompt += f"""I found the stock data below because {stock["description"]} . Those stock data are : \n"""
+                augmented_prompt += f"""{str(stock["response"])}\n"""
+            return augmented_prompt
+
+        return results
+
+    async def process_parameter(self, parameter):
+        function = parameter["function"]
+        symbol = parameter["symbol"]
+        description = parameter["description"]
+
+        response = await self.stock_pipeline.aquery(function=function, symbol=symbol)
+
+        return {
+            "function": function,
+            "symbol": symbol,
+            "description": description,
+            "response": response,
+        }

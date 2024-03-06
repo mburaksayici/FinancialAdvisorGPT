@@ -87,6 +87,29 @@ class OnlineModelDriver:
         except Exception:
             logging.error(traceback.format_exc())
 
+    async def aanswer(
+        self,
+        query,
+        streaming=True,
+    ):
+        if self.data_chain_driver.data_chains:  # Fix later.
+            enriched_prompt = await self.data_chain_driver.aget_augmented_prompt(query)
+        formatted_chat_prompt = self.chat_prompt.format_messages(
+            question=query, context=enriched_prompt
+        )
+
+        # if streaming:
+        # async for chunk in qa_chain.astream(
+        #    {"query": query}
+        # ):  #         async for chunk in qa_chain.astream({"query": query}):
+        #    yield chunk["result"]
+        # else:F
+        try:
+            result = self.model.invoke(formatted_chat_prompt)
+            return result
+        except Exception:
+            logging.error(traceback.format_exc())
+
     def chatt(
         self,
         query,

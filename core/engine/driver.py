@@ -159,3 +159,9 @@ class ChainLLMModel:  # TO DO : Better name
         chain = LLMChain(llm=self.model, prompt=prompt_template)
 
         return chain.run(query)  # qa_chain({"query": query})['result']
+
+    async def async_chat(self, query, prompt_template):
+
+        chain = LLMChain(llm=self.model, prompt=prompt_template)
+
+        return await chain.arun(query)  # qa_chain({"query": query})['result']

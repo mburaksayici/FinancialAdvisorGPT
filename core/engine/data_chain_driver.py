@@ -1,3 +1,5 @@
+import asyncio
+
 from langchain import PromptTemplate
 from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -44,4 +46,20 @@ class DataChainDriver:
         for chain in self.data_chains:
             enriched_prompt += chain.get_data(query)
             enriched_prompt += "\n"
+        return enriched_prompt.replace("{", "{{").replace("}", "}}")
+
+    async def aget_augmented_prompt(
+        self,
+        query,
+        streaming=True,
+    ):
+        tasks = [await chain.aget_data(query) for chain in self.data_chains]
+        results = await asyncio.gather(*tasks)
+        # enriched_prompt = """\n"""
+        # for chain in self.data_chains:
+        #    enriched_prompt += await chain.aget_data(query)
+        #    enriched_prompt += "\n"
+
+        # results = enriched_prompt
+        enriched_prompt = "\n".join(results)
         return enriched_prompt.replace("{", "{{").replace("}", "}}")

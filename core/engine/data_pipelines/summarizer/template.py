@@ -33,6 +33,17 @@ class SummarizerChain(AbstractDataChain):
     def chat(self, context):
         return self.model.nonasync_chat(context, prompt_template=self.prompt_template)
 
+    async def async_chat(self, context):
+        return await self.model.async_chat(
+            context, prompt_template=self.prompt_template
+        )
+
     def get_data(self, context, return_augmented_prompt=True, word_count: int = 50):
         print("summarizing")
         return self.chat({"word_count": word_count, "context": context})
+
+    async def aget_data(
+        self, context, return_augmented_prompt=True, word_count: int = 50
+    ):
+        print("summarizing")
+        return await self.async_chat({"word_count": word_count, "context": context})

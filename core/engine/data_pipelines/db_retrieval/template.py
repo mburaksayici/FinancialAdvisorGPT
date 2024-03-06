@@ -1,5 +1,5 @@
 import ast
-
+import asyncio
 from langchain import PromptTemplate
 
 from base.base_datachain import AbstractDataChain
@@ -47,6 +47,11 @@ class DBRetrievalChain(AbstractDataChain):
     def chat(self, context):
         return self.model.nonasync_chat(context, prompt_template=self.prompt_template)
 
+    async def async_chat(self, context):
+        return await self.model.async_chat(
+            context, prompt_template=self.prompt_template
+        )
+
     def get_data(self, context, return_augmented_prompt=True):
         response = self.chat(context)
         print("retrieving documents")
@@ -71,6 +76,56 @@ class DBRetrievalChain(AbstractDataChain):
                 if len(content) > 100:
                     content = self.summarizer_chain.get_data(content, word_count=20)
                 augmented_prompt += f"""{i}. Question : {db_source["query"]} . filename : {db_source["source"]} . Context : {content} \n"""
+
+            return augmented_prompt
+
+        return data
+
+    async def aget_data(self, context, return_augmented_prompt=True):
+        response = await self.async_chat(context)
+        print("retrieving documents")
+        db_retrieval_queries = ast.literal_eval(response)
+
+        data = relevant_docs_list = list()
+
+        tasks = []
+        for query in db_retrieval_queries:
+            task = self.db_retrieval_pipeline.aquery(query=query, k=2)
+            tasks.append(task)
+
+        relevant_docs_lists = await asyncio.gather(*tasks)
+        relevant_docs_list = [doc for sublist in relevant_docs_lists for doc in sublist]
+
+        if return_augmented_prompt:
+            augmented_prompt = """Here's the data sources I found for you to help you to answer the question. You may or may not prefer to consider all questions and answers. If you think questions are relevant, and context is relevant to the question, you can create an answer by referencing the facts from the documents. Please cite the resources with links and dates if it's given. : """
+
+            # Concurrently gather content for each relevant document
+            acontent_tasks = []
+            content_results = []
+
+            for db_source in relevant_docs_list:
+                content = db_source["page_content"]
+                if len(content) > 100:
+                    task = self.summarizer_chain.aget_data(content, word_count=20)
+                    acontent_tasks.append(task)
+                else:
+                    # If content is less than 100 characters, append it directly
+                    content_results.append(content)
+
+            acontent_results = await asyncio.gather(
+                *acontent_tasks, return_exceptions=True
+            )
+            content_results.extend(acontent_results)
+
+            # Combine the content with other information and construct the augmented prompt
+            for i, (db_source, content) in enumerate(
+                zip(relevant_docs_list, content_results)
+            ):
+                if isinstance(content, Exception):
+                    # Handle exceptions if any occurred during gathering
+                    augmented_prompt += f"Error fetching content for document {i}: {type(content).__name__}\n"
+                else:
+                    augmented_prompt += f"{i}. Question : {db_source['query']} . filename : {db_source['source']} . Context : {content} \n"
 
             return augmented_prompt
 
