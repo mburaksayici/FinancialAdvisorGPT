@@ -70,7 +70,7 @@ def answer(
     if pdf_link:
         model_driver.load_document(pdf_link)
 
-    return model_driver.chat(query)
+    return model_driver.answer(query)
 
 
 # return model_driver.chat(query)
