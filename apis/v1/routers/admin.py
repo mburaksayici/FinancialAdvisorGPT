@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Body, File, HTTPException, UploadFile
+from typing import Optional, Annotated, Union
+
+
+from fastapi import APIRouter, Body, File, HTTPException, UploadFile, Header
 from fastapi.responses import StreamingResponse
 from passlib.context import CryptContext
 
@@ -15,7 +18,7 @@ from schemas.admin import AdminData, AdminSignIn, ChatRequest
 model_driver = OnlineModelDriver()
 model_driver.set_pdf_loader("PyPDFLoader")
 model_driver.load_model("mistral-api")
-model_driver.set_data_chains([DBRetrievalChain, NewsDataChain, StockDataChain])
+model_driver.set_data_chains([DBRetrievalChain, StockDataChain, NewsDataChain])  #
 router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
@@ -70,10 +73,22 @@ def answer(
     if pdf_link:
         model_driver.load_document(pdf_link)
 
-    return model_driver.answer(query)
+    return {"answer": model_driver.answer(query)}
 
 
-# return model_driver.chat(query)
+@router.get("/initialise_conversation/")
+def initialise_conversation(
+    user_id: Annotated[Union[str, None], Header()] = "admin",
+):
+    return {"conversation_id": model_driver.initialise_conversation(user_id=user_id)}
+
+
+@router.get("/conversation/")
+def conversation(query: str, conversation_id: str, user_id: str):
+    print("conversation...")  #  TO DO : use python logging later.
+    return model_driver.conversation(
+        query=query, user_id=user_id, conversation_id=conversation_id
+    )
 
 
 @router.post("/upload_pdf/")

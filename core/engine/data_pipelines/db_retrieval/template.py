@@ -71,7 +71,9 @@ class DBRetrievalChain(AbstractDataChain):
         if return_augmented_prompt:
 
             augmented_prompt = """Here's the data sources I found for you to help you to answer the question. You may or may not prefer to consider all questions and answers. If you think questions are relevant, and context is relevant to the question, you can create an answer by referencing the facts from the documents.   Please cite the resources with links and dates if it's given. : """
-            for i, db_source in enumerate(relevant_docs_list):
+            for i, db_source in enumerate(
+                relevant_docs_list[0:1]
+            ):  # TO DO : Uncover or fix limit
                 content = db_source["page_content"]
                 if len(content) > 100:
                     content = self.summarizer_chain.get_data(content, word_count=20)
@@ -103,7 +105,7 @@ class DBRetrievalChain(AbstractDataChain):
             acontent_tasks = []
             content_results = []
 
-            for db_source in relevant_docs_list:
+            for db_source in relevant_docs_list[0:1]:  # TO DO : Uncover the limit
                 content = db_source["page_content"]
                 if len(content) > 100:
                     task = self.summarizer_chain.aget_data(content, word_count=20)

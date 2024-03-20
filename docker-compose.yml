@@ -9,12 +9,12 @@ services:
     - .env
 
 
+
   mongodb:
-    image: bitnami/mongodb:latest
+    image: mongo:4.2.3-bionic
+    container_name: mongodb
     ports:
     - 27017:27017
-    volumes:
-    - data:/bitnami/mongodb
 
 
 volumes:

@@ -3,17 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from apis.v1.routers.admin import router as AdminRouter
 from auth.jwt_bearer import JWTBearer
-from database.mongo.client import connect
+from database.mongo.client import connect_mongodb
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "*"
-    ],  # Allow requests from any origin (replace "*" with specific origins if needed)
+    allow_origins=["*"],  # Adjust this to the origin of your React application
     allow_credentials=True,
-    allow_methods=["GET", "POST"],  # Allow these HTTP methods
-    allow_headers=["Content-Type"],  # Allow these headers
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+    ],  # Adjust these based on your allowed methods
+    allow_headers=["*"],  # Adjust this to the headers your React application sends
 )
 
 token_listener = JWTBearer()
@@ -21,7 +24,7 @@ token_listener = JWTBearer()
 
 @app.on_event("startup")
 async def start_database():
-    connect()
+    connect_mongodb()
 
 
 @app.get("/", tags=["Root"])

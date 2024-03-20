@@ -22,7 +22,7 @@ langchain-core==0.1.30
 langchain-mistralai==0.0.5
 langchain-text-splitters==0.0.1
 lazy-model==0.2.0
-mongoengine==0.28.0
+mongoengine==0.27.0
 mongomock==4.1.2
 mongomock-motor==0.0.21
 motor==3.3.1

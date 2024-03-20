@@ -1,13 +1,15 @@
 """Mongodb functions to crud data from"""
-from models import Users, Chats
+from models import Users, Conversations
 
 
 class DBUtils:
-    def write_chat(chat_history, chat_id, user_id):
-        Chats(chat_history=chat_history, chat_id=chat_id, user_id=user_id).save()
+    def write_chat(chat_history, conversation_id, user_id):
+        Conversations(
+            chat_history=chat_history, conversation_id=conversation_id, user_id=user_id
+        ).save()
 
-    def read_check(chat_id):
-        return Chats.objects(chat_id=chat_id)
+    def read_check(conversation_id):
+        return Conversations.objects(conversation_id=conversation_id)
 
     def write_user(user_name, user_password):
         Users(
