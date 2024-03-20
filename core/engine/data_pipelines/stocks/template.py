@@ -69,7 +69,7 @@ class StockDataChain(AbstractDataChain):
         print("searching this stock: ", stock_pipeline_parameters)
         data = list()
 
-        for parameter in stock_pipeline_parameters:
+        for parameter in stock_pipeline_parameters[:1]:
             function = parameter["function"]
             symbol = parameter["symbol"]
             description = (

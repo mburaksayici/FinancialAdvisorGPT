@@ -18,7 +18,9 @@ from schemas.admin import AdminData, AdminSignIn, ChatRequest
 model_driver = OnlineModelDriver()
 model_driver.set_pdf_loader("PyPDFLoader")
 model_driver.load_model("mistral-api")
-model_driver.set_data_chains([DBRetrievalChain, StockDataChain, NewsDataChain])  #
+model_driver.set_data_chains(
+    [DBRetrievalChain, NewsDataChain, StockDataChain]
+)  # NewsDataChain StockDataChain
 router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])

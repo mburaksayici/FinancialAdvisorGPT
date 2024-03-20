@@ -82,7 +82,7 @@ class NewsDataChain(AbstractDataChain):
         print("searching this news: ", news_pipeline_parameters)
 
         data = list()
-        for parameter in news_pipeline_parameters:
+        for parameter in news_pipeline_parameters[0:1]:
             query = parameter["query"]
             sortBy = parameter["sortBy"]
 

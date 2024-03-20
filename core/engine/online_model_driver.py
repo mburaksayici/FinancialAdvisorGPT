@@ -164,9 +164,10 @@ class OnlineModelDriver:
             conversation = self.chat_prompt.format_messages(
                 question=query, context=enriched_prompt
             )
+            print(enriched_prompt, "*********" * 4)
+
         else:
             conversation.append(HumanMessage(content=query))
-
         try:
             ai_message = self.model.invoke(conversation)
             # save last conversations.

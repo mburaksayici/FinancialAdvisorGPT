@@ -72,7 +72,7 @@ class DBRetrievalChain(AbstractDataChain):
 
             augmented_prompt = """Here's the data sources I found for you to help you to answer the question. You may or may not prefer to consider all questions and answers. If you think questions are relevant, and context is relevant to the question, you can create an answer by referencing the facts from the documents.   Please cite the resources with links and dates if it's given. : """
             for i, db_source in enumerate(
-                relevant_docs_list[0:1]
+                relevant_docs_list[0:4]
             ):  # TO DO : Uncover or fix limit
                 content = db_source["page_content"]
                 if len(content) > 100:

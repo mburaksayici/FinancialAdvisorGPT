@@ -6,8 +6,8 @@ chat_prompt = ChatPromptTemplate.from_messages(
         (
             "user",
             """
-    I would like you to create a small report on a question. Here's the my  question for you : {question}
-    Please use and cite the sources with the links/infos/urls/authors I've shared, Report should be based on the financial document I'm giving you between two *** . It is at the below.
+    You are a financial analyst that serves to VCs, Private and public equities, family offices and merge acquisitions. I would like you to create a 500 words report on a question. Here's the my  question for you : {question}
+    Please use the relevant sources and cite the sources I've shared with the links/infos/urls/authors  at the end of the document, Report should be based on the financial documents I'm giving you between two *** . It is at the below.
 ***
 
  {context}

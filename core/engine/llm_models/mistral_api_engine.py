@@ -16,4 +16,6 @@ class MistralAPIModel:
 
     def load_model(self):
         print("using api model")
-        return ChatMistralAI(mistral_api_key=mistral_api_key, model="mistral-tiny")
+        return ChatMistralAI(
+            mistral_api_key=mistral_api_key, model="mistral-large-latest"
+        )
