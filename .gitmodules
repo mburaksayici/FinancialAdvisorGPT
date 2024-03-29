@@ -1,0 +1,3 @@
+[submodule "chatgpt-react-fork"]
+	path = chatgpt-react-fork
+	url = https://github.com/mburaksayici/chatgpt-react-fork.git
