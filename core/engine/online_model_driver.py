@@ -2,6 +2,7 @@ import logging
 from queue import Empty
 from threading import Thread
 import traceback
+import os
 
 from langchain import PromptTemplate
 from langchain.chains import RetrievalQA
@@ -59,6 +60,17 @@ class OnlineModelDriver:
         self.vectorstore = Chroma.from_documents(
             documents=all_splits, embedding=self.embedding
         )
+
+    def load_assets(
+        self,
+    ):
+        logging.info("Assets directory is loading.")
+        for pdf in os.listdir("uploaded_files/"):
+            if ".pdf" in pdf:
+                try:
+                    self.load_document(pdf)
+                except Exception as exc:
+                    logging.warning(f"Couldnt load {pdf} file :: {exc}", exc_info=True)
 
     def load_model(self, model_name):  # TO DO : Move model DB to mongo.
         # if model_name == "mistral":

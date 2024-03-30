@@ -21,6 +21,7 @@ model_driver.load_model("mistral-api")
 model_driver.set_data_chains(
     [DBRetrievalChain, NewsDataChain, StockDataChain]
 )  # NewsDataChain StockDataChain
+model_driver.load_assets()
 router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
