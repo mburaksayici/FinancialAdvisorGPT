@@ -1,12 +1,15 @@
 version: '3'
 
 services:
-  web:
+  backend:
     build: .
     ports:
     - 8080:8080
     env_file:
     - .env
+    volumes:
+    - ./uploaded_files:/app/uploaded_files
+    - ${LOCAL_CHROMADB_PATH}:/app/${LOCAL_CHROMADB_PATH}
 
 
 
@@ -17,5 +20,9 @@ services:
     - 27017:27017
 
 
-volumes:
-  data:
+  frontend:
+    build:
+      context: chatgpt-react-fork
+    ports:
+    - 5173:5173
+    restart: always
