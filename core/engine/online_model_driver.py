@@ -70,7 +70,7 @@ class OnlineModelDriver:
         for pdf in os.listdir(uploaded_files_folder):
             if ".pdf" in pdf:
                 try:
-                    self.load_document(os.path.join(uploaded_files_folder, pdf))
+                    self.load_document(pdf)
                 except Exception as exc:
                     logging.warning(f"Couldnt load {pdf} file :: {exc}", exc_info=True)
 
