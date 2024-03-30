@@ -64,11 +64,13 @@ class OnlineModelDriver:
     def load_assets(
         self,
     ):
+        # TO DO : add path to config or env file.
+        uploaded_files_folder = "uploaded_files/"
         logging.info("Assets directory is loading.")
-        for pdf in os.listdir("uploaded_files/"):
+        for pdf in os.listdir(uploaded_files_folder):
             if ".pdf" in pdf:
                 try:
-                    self.load_document(pdf)
+                    self.load_document(os.path.join(uploaded_files_folder, pdf))
                 except Exception as exc:
                     logging.warning(f"Couldnt load {pdf} file :: {exc}", exc_info=True)
 
