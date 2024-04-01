@@ -1,28 +1,13 @@
-## LLM+RAG Boilerplate Project Initialised on Financial Advises
+## FinancialAdvisorGPT : LLM+RAG Boilerplate Project Initialised on Financial Advises
 Based on MongoDB+MongoDB VectorDB(TBD)+Chroma+FastAPI+Langchain+Redis(TBD), plus react in a forked submodule project.
+
+https://github.com/mburaksayici/FinancialAdvisorGPT/assets/25187211/8618c9fb-fbf7-49ff-867d-2a15de47f4f8
+
+FinancialAdvisorGPT is a boilerplate project designed for RAG (Retriever-Augmented Generation) and LLM (Large Language Model) applications in financial analysis. Built on a technology stack including MongoDB, MongoDB VectorDB, Chroma, FastAPI, Langchain, and React submodule for UI,  it offers a framework for developers to implement and customize RAG+LLM projects. Leveraging parallelized data pipelines, FinancialAdvisorGPT processes and integrates various data sources such as stock data, news, SEC filings, and local PDFs. With Mistral-Tiny and Mistral-Small LLM models handling natural language tasks, FinancialAdvisorGPT facilitates the generation of high-quality financial reports. Development challenges, including Langchain's complexity, are acknowledged, with ongoing efforts focused on enhancing functionality and performance for RAG+LLM applications in financial analysis.
 
 RAG project that reads stock data, news, SEC filings (or your local pdfs) and creates high quality reports that is able to  reference and links to the sources without hallucination.
 
 
-<img width="497" alt="Ekran Resmi 2024-03-23 01 18 00" src="https://github.com/mburaksayici/finsean/assets/25187211/81666cc3-c988-45ce-9e58-68c3dc39d452">
-
-
-
-To dos:
-
-- [x] Chat Memory
-- [x] News search through augmentation
-- [x] Stock data acquisition through augmentation
-- [x] Chunking local pdfs to Vector DB
-- [x] Vector DB (Chroma)
-- [x] Chats stored in DB
-- [x] Source citing
-- [ ] Conversation Map through networkx (See chat diagram with black background below)
-- [ ] Cost management
-- [ ] Mongo Vector DB 
-- [ ] Redis Cacheing for RAG
-- [ ] Redis Cacheing for conversations
-- [ ] Mongodb 
 
 ### Installment
 
@@ -37,24 +22,24 @@ docker-compose up -d
 ```
 
 
-#### Database Choice:
+### Database Choice:
 
 Although i dont utilise it atm, database choice is mongodb latest version with its Vector DB feature.
 Although I use Chromadb for now, I don't really believe the options like chromadb(which is sqlite) is necessary, big DB companies will offer faster Vector DB features.
 
 I also have done Vector similarity search in Gesund Inc., its just keeping arrays and retrieving it.
 
-#### Cache Choice:
+### Cache Choice:
 
 Although I haven't activated it as of the date of 22 March, 2024, Redis to cache conversations between user and LLM architecture is extremely needed.
 
-#### Parallelization of Data Pipelines:
+### Parallelization of Data Pipelines:
 
 RAG takes time.  Data acquisition, augmentation wrt the new data, feeding LLMs with new data takes time. Thus, each independent pipeline is parallelised. 
 
 The RAG pipeline diagram below, DataPipelines are responsible for both generating questions to search for. DBRetrieval creates 10 questions given user prompt, then do vector search on DB which extracted from document. StockDataRetrieval creates 10 API request payloads given user prompt oversimplified like {"tinker":"TSL", "data": "MARKETCAP"}, then do API calls to get live data. Search of 10 questions, all parallelised.  It takes 45 secs to analyse 20 pdfs (30 pages on average), stock data of 2 companies and 10 news with parallelisation. Otherwise, it takes 3-4 mins to create example report above.
 
-#### RAG Pipeline: 
+### RAG Pipeline: 
 
 RAG pipeline, consist of 3 elements at the moment, that gathers data from pdfs, Stock Data and News data. PDF data is extracted to ChromaDB(but I plan to move it to MongoDB+Mongo Vector), stock and news data is gathered from online sources (API keys needed). 
 
@@ -71,7 +56,7 @@ RAG pipeline, consist of 3 elements at the moment, that gathers data from pdfs, 
 Red boxes are user prompt, green boxes are the answer of Responder LLM. Check the arrows in the upper green box. User Question(prompt) requires retrieval to all data sources. However, at the middle green box, user question(prompt) doesn't require any sources, question may be solved with the already-analysed data, so pipeline is not executed. 
 
 
-#### Problems on RAG Pipeline: 
+### Problems on RAG Pipeline: 
 1. LLM is not able to focus on large documents, in fact it focuses on the first paragraph[ Lost in The Middle Paper : https://arxiv.org/abs/2307.03172].
    
    Where you place the relevant information is (at least at 2024 March) very important. Solution : It can be solved with having multiple Responder LLMs(see pipeline) that each shares some part of the retrieved data and each responsible for creating one "section" of the report. 
@@ -82,7 +67,7 @@ Red boxes are user prompt, green boxes are the answer of Responder LLM. Check th
 
    b. Although not implemented yet, multiple Responder LLMs(see pipeline) that each shares some part of the retrieved data and each responsible for creating one "section" of the report.
    
-#### LLM Model:
+### LLM Model:
 
 Mistral-Tiny and Mistral-Small is used. Mistral-Tiny not always following the instructions, small is better.
 Big/better models are also error-prone. Chip Huyen's blog has great insights and production experiences that I'll summarize, but the most interesting one is that :
@@ -94,7 +79,7 @@ Multiple models can be used, for small tasks, cheap LLMs can be used. Or, some l
 ![Ekran_Resmi_2024-02-23_12 09 22](https://github.com/mburaksayici/finsean/assets/25187211/ac98014f-cfdb-4692-bdeb-fd642341d328)
 
 
-#### Experience on Langchain:
+### Experience on Langchain:
 As of the date of 23 March 2024, it sucks. After suffering with Langchain, i randomly typed "langchain sucks" to the Google because of boredom and was happy to coincidentially  confirm that it sucks from Redditors.
 
 My comment is simply : Langchain python library is overengineered without documentation, which makes it complex. I won't give other details, here are the sources: 
@@ -103,7 +88,7 @@ https://www.reddit.com/r/datascienceproject/comments/16o246h/is_it_just_me_or_is
 
 Just search for "langchain is complex" in google to see what i mean.
 
-#### Streaming, and a lesson from Devin: 
+### Streaming, and a lesson from Devin: 
 
 Streaming is painful, at least for me atm. Serving the streaming API, encapsulating it on FASTAPI and sending the response as a streaming process, I just didn't focus too much on that. But one thing is interesting to discuss.
 
@@ -113,10 +98,24 @@ Look what Devin does: https://www.youtube.com/watch?v=fjHtjT7GO1c
 
 Think of this : You ask Devin to give you a Python project with mongodb+flask app that you order pizza. It'll initialise the project, do google search, execute and fix errors. It'll take may be hours to be done with it, right? How do you fool the user then? Devin shows all RAG pipelines in action. It executes selenium search in Google, it runs the code, it shows that errors are there, etc. etc. So once you inform user that "Hey I'm AI, and I'm working on it" and if you make user feel like a pissed-off boss who tracks the new employees computer to annoy, they'll enjoy. Sad but true. This gives UI-UX insights.
 
-#### What needs to be done: 
+### What needs to be done: 
 - Tracking the LLM pipelines. I wouldn't trust langchain for that atm.
 - Tracking the data pipelines for query. Each answer needs to be tracked. Not all questions require to get all data from all sources. Some questions may be relevant to the conversation history as well. 
 
+- [x] Chat Memory
+- [x] News search through augmentation
+- [x] Stock data acquisition through augmentation
+- [x] Chunking local pdfs to Vector DB
+- [x] Parallelization of RAG pipelines 
+- [x] Vector DB (Chroma)
+- [x] Chats stored in DB
+- [x] Source citing
+- [ ] Conversation Map through networkx (See chat diagram with black background below)
+- [ ] Cost management
+- [ ] Mongo Vector DB 
+- [ ] Redis Cacheing for RAG
+- [ ] Redis Cacheing for conversations
+- [ ] Mongodb 
 
 
 #### Some insights(from https://huyenchip.com/2023/04/11/llm-engineering.html):
