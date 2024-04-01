@@ -24,6 +24,19 @@ To dos:
 - [ ] Redis Cacheing for conversations
 - [ ] Mongodb 
 
+### Installment
+
+```
+git clone --recursive https://github.com/mburaksayici/finsean.git
+cd finsean
+# Edit the .env file 
+mkdir -p uploaded_files
+wget -P  uploaded_files  https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2023-Update.pdf
+wget -P  uploaded_files https://ir.tesla.com/_flysystem/s3/sec/000162828024002390/tsla-20231231-gen.pdf
+docker-compose up -d 
+```
+
+
 #### Database Choice:
 
 Although i dont utilise it atm, database choice is mongodb latest version with its Vector DB feature.
