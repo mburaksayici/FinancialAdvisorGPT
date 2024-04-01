@@ -1,5 +1,5 @@
 ## FinancialAdvisorGPT : LLM+RAG Boilerplate Project Initialised on Financial Advises
-Based on MongoDB+MongoDB VectorDB(TBD)+Chroma+FastAPI+Langchain+Redis(TBD), plus react in a forked submodule project.
+Based on MongoDB+MongoDB VectorDB(TBD)+Chroma+FastAPI+Langchain+Mistral+Redis(TBD), plus react in a forked submodule project.
 
 https://github.com/mburaksayici/FinancialAdvisorGPT/assets/25187211/8618c9fb-fbf7-49ff-867d-2a15de47f4f8
 
@@ -10,7 +10,7 @@ RAG project that reads stock data, news, SEC filings (or your local pdfs) and cr
 
 
 ### Installment
-
+After cloning the repo with the command below, modify the .env file, wait for pdfs to be written into the Vector DB, it may take 5 mins. Then, http://localhost:5173 . First answer may take 2-3 mins, conversations won't take that long.
 ```
 git clone --recursive https://github.com/mburaksayici/finsean.git
 cd finsean
@@ -20,6 +20,7 @@ wget -P  uploaded_files  https://digitalassets.tesla.com/tesla-contents/image/up
 wget -P  uploaded_files https://ir.tesla.com/_flysystem/s3/sec/000162828024002390/tsla-20231231-gen.pdf
 docker-compose up -d 
 ```
+
 
 
 ### Database Choice:
