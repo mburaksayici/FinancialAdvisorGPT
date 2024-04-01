@@ -4,7 +4,7 @@ News Pipelines that uses https://newsapi.org/docs/get-started
 """
 import os
 import requests
-import logging
+from logging_stack import logger
 import asyncio
 
 from database.vector_db import chromadb_langchain_client
@@ -16,7 +16,7 @@ class DBRetrievalPipeline:
 
     def query(self, query, k):
         docs = self.chromadb_langchain_client.similarity_search(query, k=k)
-        logging.info(f"Retrieved {len(docs)} documents from the database")
+        logger.info(f"Retrieved {len(docs)} documents from the database")
         return [
             {"page_content": doc.page_content, "source": doc.metadata["source"]}
             for doc in docs
@@ -25,7 +25,7 @@ class DBRetrievalPipeline:
     async def aquery(self, query, k):
         loop = asyncio.get_running_loop()
         docs = await loop.run_in_executor(None, self._query_sync, query, k)
-        logging.info(f"Retrieved {len(docs)} documents from the database")
+        logger.info(f"Retrieved {len(docs)} documents from the database")
         return [
             {
                 "page_content": doc.page_content,

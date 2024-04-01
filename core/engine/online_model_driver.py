@@ -1,4 +1,4 @@
-import logging
+from logging_stack import logger
 from queue import Empty
 from threading import Thread
 import traceback
@@ -72,13 +72,13 @@ class OnlineModelDriver:
     ):
         # TO DO : add path to config or env file.
         uploaded_files_folder = "uploaded_files/"
-        logging.info("Assets directory is loading.")
+        logger.info("Assets directory is loading.")
         for pdf in os.listdir(uploaded_files_folder):
             if ".pdf" in pdf:
                 try:
                     self.load_document(pdf)
                 except Exception as exc:
-                    logging.warning(f"Couldnt load {pdf} file :: {exc}", exc_info=True)
+                    logger.warning(f"Couldnt load {pdf} file :: {exc}", exc_info=True)
 
     def load_model(self, model_name):  # TO DO : Move model DB to mongo.
         # if model_name == "mistral":
@@ -112,7 +112,7 @@ class OnlineModelDriver:
             result = self.model.invoke(formatted_chat_prompt)
             return result
         except Exception:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
 
     async def aanswer(
         self,
@@ -135,7 +135,7 @@ class OnlineModelDriver:
             result = self.model.invoke(formatted_chat_prompt)
             return result
         except Exception:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
 
     def chatt(
         self,
@@ -164,7 +164,7 @@ class OnlineModelDriver:
             result = qa_chain({"query": query})["result"]
             return result
         except Exception:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())
 
     def conversation(
         self,
@@ -204,4 +204,4 @@ class OnlineModelDriver:
             return {"role": "assistant", "content": ai_message.content}
 
         except Exception:
-            logging.error(traceback.format_exc())
+            logger.error(traceback.format_exc())

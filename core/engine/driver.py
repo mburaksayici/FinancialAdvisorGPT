@@ -1,4 +1,4 @@
-import logging
+from logging_stack import logger
 from queue import Empty
 from threading import Thread
 
