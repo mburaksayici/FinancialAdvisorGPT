@@ -15,6 +15,7 @@ from core.engine.message_prompts.message_prompts import chat_prompt
 from core.engine.data_chain_driver import DataChainDriver
 from core.engine.data_pipelines.pdf_pipelines import pdf_loader_factory
 from core.engine.conversation.conversation_manager import ConversationManager
+from database.vector_db import chromadb_client
 from models import *
 
 # from core.engine.llm_models.mistral_7b_engine import Mistral7BInstructModel
@@ -26,6 +27,9 @@ class OnlineModelDriver:
     def __init__(self) -> None:
         self.model = None
         self.data_chains = None
+        self.chromadb_client = (
+            chromadb_client  # vectorstore, it can be injected through fastapi as well.
+        )
         self.set_pdf_loader()  # to be fixed later
         self.set_textsplitter()  # to be fixed later
         self.set_embedding()  # to be fixed later
@@ -57,8 +61,10 @@ class OnlineModelDriver:
             loader = self.loader(document_link)
         data = loader.load()
         all_splits = self.text_splitter.split_documents(data)
-        self.vectorstore = Chroma.from_documents(
-            documents=all_splits, embedding=self.embedding
+        self.chroma_collection = Chroma.from_documents(
+            documents=all_splits,
+            embedding=self.embedding,
+            client=self.chromadb_client,
         )
 
     def load_assets(
@@ -144,7 +150,7 @@ class OnlineModelDriver:
 
         qa_chain = RetrievalQA.from_chain_type(
             self.model,
-            retriever=self.vectorstore.as_retriever(),
+            retriever=self.chroma_collection.as_retriever(),
             chain_type_kwargs={"prompt": qa_chain_prompt},
         )
 
