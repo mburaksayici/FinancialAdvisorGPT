@@ -1,4 +1,4 @@
-## FinancialAdvisorGPT : LLM+RAG Boilerplate Project Initialised on Financial Advises
+## FinancialAdvisorGPT : LLM+RAG Boilerplate Project 
 
 FinancialAdvisorGPT is a boilerplate project designed for RAG (Retriever-Augmented Generation) and LLM (Large Language Model) applications in financial analysis. Built on a technology stack including MongoDB, MongoDB VectorDB, Chroma, FastAPI, Langchain, and React submodule for UI,  it offers a framework for developers to implement and customize RAG+LLM projects. Leveraging parallelized data pipelines, FinancialAdvisorGPT processes and integrates various data sources such as stock data, news, SEC filings, and local PDFs. With Mistral-Tiny and Mistral-Small LLM models handling natural language tasks, FinancialAdvisorGPT facilitates the generation of high-quality financial reports. Development challenges, including Langchain's complexity, are acknowledged, with ongoing efforts focused on enhancing functionality and performance for RAG+LLM applications in financial analysis.
 
