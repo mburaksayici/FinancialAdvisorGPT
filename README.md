@@ -1,12 +1,28 @@
-## RAG Pipeline with LLM for Financial GPT
+## LLM+RAG Boilerplate Project Initialised on Financial Advises
+Based on MongoDB+MongoDB VectorDB(TBD)+Chroma+FastAPI+Langchain+Redis(TBD), plus react in a forked submodule project.
 
+RAG project that reads stock data, news, SEC filings (or your local pdfs) and creates high quality reports that is able to  reference and links to the sources without hallucination.
 
-RAG project that reads stock data, news, SEC filings (pdfs) and creates high quality reports that is able to  reference and links to the sources without hallucination.
-
-Based on MongoDB+MongoDB VectorDB(TBD)+FastAPI+Langchain+Redis(TBD)
 
 <img width="497" alt="Ekran Resmi 2024-03-23 01 18 00" src="https://github.com/mburaksayici/finsean/assets/25187211/81666cc3-c988-45ce-9e58-68c3dc39d452">
 
+
+
+To dos:
+
+- [x] Chat Memory
+- [x] News search through augmentation
+- [x] Stock data acquisition through augmentation
+- [x] Chunking local pdfs to Vector DB
+- [x] Vector DB (Chroma)
+- [x] Chats stored in DB
+- [x] Source citing
+- [ ] Conversation Map through networkx (See chat diagram with black background below)
+- [ ] Cost management
+- [ ] Mongo Vector DB 
+- [ ] Redis Cacheing for RAG
+- [ ] Redis Cacheing for conversations
+- [ ] Mongodb 
 
 #### Database Choice:
 
