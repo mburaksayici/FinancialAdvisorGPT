@@ -2,11 +2,9 @@
 
 FinancialAdvisorGPT is a boilerplate project designed for RAG (Retriever-Augmented Generation) and LLM (Large Language Model) applications in financial analysis. Built on a technology stack including MongoDB, MongoDB VectorDB, Chroma, FastAPI, Langchain, and React submodule for UI,  it offers a framework for developers to implement and customize RAG+LLM projects. Leveraging parallelized data pipelines, FinancialAdvisorGPT processes and integrates various data sources such as stock data, news, SEC filings, and local PDFs. With Mistral-Tiny and Mistral-Small LLM models handling natural language tasks, FinancialAdvisorGPT facilitates the generation of high-quality financial reports. Development challenges, including Langchain's complexity, are acknowledged, with ongoing efforts focused on enhancing functionality and performance for RAG+LLM applications in financial analysis.
 
-Based on MongoDB+MongoDB VectorDB(TBD)+Chroma+FastAPI+Langchain+Mistral+Redis(TBD), plus react in a forked submodule project. RAG project that reads stock data, news, SEC filings (or your local pdfs) and creates high quality reports that is able to  reference and links to the sources without hallucination.
-
-
 https://github.com/mburaksayici/FinancialAdvisorGPT/assets/25187211/8618c9fb-fbf7-49ff-867d-2a15de47f4f8
 
+Based on MongoDB+MongoDB VectorDB(TBD)+Chroma+FastAPI+Langchain+Mistral+Redis(TBD), plus react in a forked submodule project. RAG project that reads stock data, news, SEC filings (or your local pdfs) and creates high quality reports that is able to  reference and links to the sources without hallucination.
 
 ### Installment
 After cloning the repo with the command below, modify the .env file, wait for pdfs to be written into the Vector DB, it may take 5 mins. Then, http://localhost:5173 . First answer may take 2-3 mins, conversations won't take that long.
