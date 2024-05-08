@@ -9,9 +9,12 @@ from auth.jwt_handler import sign_jwt
 from core.engine.data_pipelines.news.template import NewsDataChain
 from core.engine.data_pipelines.stocks.template import StockDataChain
 from core.engine.data_pipelines.db_retrieval.template import DBRetrievalChain
+from core.engine.data_pipelines.gmaps_places.template import GMapsPlacesRetrievalChain
+from core.analyse_engine.analyse import analyser
 
 # from core.engine.model_driver import ModelDriver
 from core.engine.online_model_driver import OnlineModelDriver
+from core.engine.online_model_driver import DashboardChatDriver
 from models.users.users import Users
 from schemas.admin import AdminData, AdminSignIn, ChatRequest
 
@@ -19,9 +22,13 @@ model_driver = OnlineModelDriver()
 model_driver.set_pdf_loader("PyPDFLoader")
 model_driver.load_model("mistral-api")
 model_driver.set_data_chains(
-    [DBRetrievalChain, NewsDataChain, StockDataChain]
+    [DBRetrievalChain, NewsDataChain, StockDataChain, GMapsPlacesRetrievalChain]
 )  # NewsDataChain StockDataChain
-model_driver.load_assets()
+# model_driver.load_assets()
+
+dashboard_chat_driver = DashboardChatDriver()
+
+
 router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
@@ -94,8 +101,35 @@ def conversation(query: str, conversation_id: str, user_id: str):
     )
 
 
+@router.get("/get_places/")
+def get_places(
+    latitute: float,
+    longitude: float,
+    user_id: str,
+    sector: str = "home appliances",
+    radius: int = 5000,
+):
+    places = GMapsPlacesRetrievalChain(model=None, prompt_template=None).get_raw_data(
+        context={
+            "latitute": latitute,
+            "sector": sector,
+            "radius": radius,
+            "longitude": longitude,
+        }
+    )
+    return {"places": places}
+
+
 @router.post("/upload_pdf/")
 def upload_pdf(pdf_file: UploadFile = File(...)):
     with open(f"uploaded_files/{pdf_file.filename}", "wb") as buffer:
         buffer.write(pdf_file.file.read())
     return {"filename": pdf_file.filename}
+
+
+@router.get("/dashboard_conversation/")
+def conversation(query: str, conversation_id: str, user_id: str):
+    print("conversation...")  #  TO DO : use python logging later.
+    return dashboard_chat_driver.conversation(
+        query=query, user_id=user_id, conversation_id=conversation_id
+    )

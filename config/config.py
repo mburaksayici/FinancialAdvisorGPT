@@ -17,8 +17,9 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
 
     class Config:
-        env_file = ".env.dev"
+        env_file = ".env"
         from_attributes = True
+        extra = "allow"
 
 
 class MongoConfig:
@@ -27,7 +28,7 @@ class MongoConfig:
         "MONGODB_HOST", "localhost"
     )  # ?authSource=admin&ssl=true&replicaSet=globaldb"
     MONGODB_PORT = os.getenv("MONGODB_PORT", "27017")
-    MONGO_URL = DATABASE_URL = f"mongodb://{MONGODB_HOST}:{MONGODB_PORT}/finsean"
+    MONGO_URL = DATABASE_URL = f"mongodb://localhost:27017/finsean"
 
 
 class RedisConfig:

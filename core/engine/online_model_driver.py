@@ -4,15 +4,19 @@ from threading import Thread
 import traceback
 import os
 
-from langchain import PromptTemplate
 from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
-from langchain_core.callbacks.base import BaseCallbackHandler
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 
-from core.engine.message_prompts.message_prompts import chat_prompt
+from core.engine.message_prompts.message_prompts import (
+    chat_prompt,
+    dashboard_chat_prompt,
+)
 from core.engine.data_chain_driver import DataChainDriver
+from core.engine.data_pipelines.agentic_pipelines.dashboard_redirector_agent import (
+    DashboardRedirectorAgent,
+)
 from core.engine.data_pipelines.pdf_pipelines import pdf_loader_factory
 from core.engine.conversation.conversation_manager import ConversationManager
 from database.vector_db import chromadb_client
@@ -202,6 +206,84 @@ class OnlineModelDriver:
                 last_message=ai_message,
             )
             return {"role": "assistant", "content": ai_message.content}
+
+        except Exception:
+            logger.error(traceback.format_exc())
+
+
+class DashboardChatDriver:
+    def __init__(self) -> None:
+        self.model = None
+        self.data_chains = None
+        self.set_textsplitter()  # to be fixed later
+        self.set_embedding()  # to be fixed later
+        self.chat_prompt = dashboard_chat_prompt
+        self.conversation_manager = ConversationManager()
+        self.data_chain_driver = DataChainDriver()
+        self.data_chain_driver.set_data_chains([])
+        self.dashboard_redirector_agent = DashboardRedirectorAgent()
+        self.load_model("mistral-api")
+
+    def set_textsplitter(self, text_splitter="RecursiveCharacterTextSplitter"):
+        self.text_splitter = text_splitter_factory(text_splitter=text_splitter)
+        # all_splits = text_splitter.split_documents(data)
+
+    def set_embedding(self, embedding="HuggingFaceEmbeddings"):
+        self.embedding = HuggingFaceEmbeddings()
+
+    def initialise_conversation(self, user_id):
+        return self.conversation_manager.initialise_conversation(user_id=user_id)
+
+    def load_model(self, model_name):  # TO DO : Move model DB to mongo.
+        # if model_name == "mistral":
+        #    self.model = Mistral7BInstructModel(
+        #        ""
+        #    ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
+        if model_name == "mistral-api":
+            self.model = MistralAPIModel(
+                ""
+            ).load_model()  # TO DO : Model configs can be jsonable later on for distribution.
+
+    def conversation(
+        self,
+        query: str,
+        user_id: str,
+        conversation_id: str,
+    ):
+        conversation = self.conversation_manager.load_conversation(
+            conversation_id=conversation_id, user_id=user_id
+        )
+        first_message = len(conversation) == 0
+        import json
+
+        if first_message:
+            enriched_prompt = query
+            output = self.dashboard_redirector_agent.conversation(query=query)
+            enriched_prompt = json.dumps(output)
+            conversation = self.chat_prompt.format_messages(
+                question=query, context=enriched_prompt
+            )
+
+        else:
+            conversation.append(HumanMessage(content=query))
+        try:
+            ai_message = self.model.invoke(conversation)
+            # save last conversations.
+            self.conversation_manager.append_to_conversation(
+                conversation_id=conversation_id,
+                user_id=user_id,
+                last_message=conversation[0],
+            )
+            self.conversation_manager.append_to_conversation(
+                conversation_id=conversation_id,
+                user_id=user_id,
+                last_message=ai_message,
+            )
+            return {
+                "role": "assistant",
+                "content": ai_message.content,
+                "graphs": output,
+            }
 
         except Exception:
             logger.error(traceback.format_exc())

@@ -2,6 +2,8 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from apis.v1.routers.admin import router as AdminRouter
+from apis.v1.routers.dashboard_page import router as DashboardRouter
+
 from auth.jwt_bearer import JWTBearer
 from database.mongo.client import connect_mongodb
 

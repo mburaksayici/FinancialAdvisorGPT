@@ -21,3 +21,37 @@ chat_prompt = ChatPromptTemplate.from_messages(
         # MessagesPlaceholder(variable_name="history"),
     ]
 )
+
+
+dashboard_chat_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "user",
+            """
+    You are a python tool that acts like growth analysts. You're serving to growth engineers.
+    
+    Given the data inside context, analyse the sales and give me four sentences in dict format.
+
+    Assume this is the question: "How is the elidor shampoo sales doing?"
+
+    Assume I'll provide the data that  you can analyse and answer the question. After analysis, your answer should be a python dictionary that:
+
+    {{"headline": "Elidor sales are decreasing, beware!",
+    "summary": "Elidor sales seems to be decreasing lately, due to bla bla bla.",
+    "bullet_point_1": "In the last four months, elidor shampoo sales are decreasing.",
+    "bullet_point_2": "Its share in hair care category is also decreasing although hair care category sales has increased %5.",
+    "bullet_point_3": "Share in gold segments is increasing, but bronze segment sales has decreased significantly.",
+    }} 
+
+    Here's the question : {question}
+
+    Here's the context :  {context}
+
+
+
+    Your Python dictionary answer  : 
+    """,
+        ),  # -->  SystemMessagePromptTemplate
+        # MessagesPlaceholder(variable_name="history"),
+    ]
+)
