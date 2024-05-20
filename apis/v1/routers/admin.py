@@ -128,8 +128,9 @@ def upload_pdf(pdf_file: UploadFile = File(...)):
 
 
 @router.get("/dashboard_conversation/")
-def conversation(query: str, conversation_id: str, user_id: str):
+def dashboard_conversation(query: str, conversation_id: str, user_id: str):
     print("conversation...")  #  TO DO : use python logging later.
+    conversation_id = model_driver.initialise_conversation(user_id=user_id)
     return dashboard_chat_driver.conversation(
         query=query, user_id=user_id, conversation_id=conversation_id
     )

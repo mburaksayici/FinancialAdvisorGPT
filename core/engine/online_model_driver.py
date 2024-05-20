@@ -279,9 +279,10 @@ class DashboardChatDriver:
                 user_id=user_id,
                 last_message=ai_message,
             )
+
             return {
                 "role": "assistant",
-                "content": ai_message.content,
+                "content": json.loads(ai_message.content),
                 "graphs": output,
             }
 

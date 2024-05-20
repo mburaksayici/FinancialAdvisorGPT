@@ -22,10 +22,11 @@ class GraphResultsRetrievalPipeline:
         for query_graph in query:
             graph_name = query_graph["graph"]
             query_graph.pop("graph")
+            query_graph["product_name"] = product_name
             graph_outputs[graph_name] = getattr(
                 self.analyser,
                 graph_name,
-            )()
+            )(**query_graph)
         return graph_outputs
 
     def aquery(self, query, product_name=None):

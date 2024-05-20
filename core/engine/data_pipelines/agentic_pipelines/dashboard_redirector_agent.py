@@ -49,7 +49,6 @@ class DashboardRedirectorAgent:
         product_name = self.product_finder_chain.get_data(
             {"question": query, "context": shortlisted_similar_products}
         )
-
         # Get the graph names
         graphs = self.graph_retrieval_chain.get_data(query)
         graphs_data = self.graph_result_retrieval_pipeline.query(

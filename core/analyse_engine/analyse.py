@@ -1,4 +1,5 @@
 import datetime as dt
+from dateutil.relativedelta import relativedelta
 from operator import attrgetter
 
 import numpy as np
@@ -210,31 +211,59 @@ class RFMAnalysis:
 class Analyse:
     def __init__(self, df) -> None:
         self.df = df
+        self.df["InvoiceDate"] = pd.to_datetime(self.df["InvoiceDate"])
+
         self.rfm_analysis = RFMAnalysis(self.df)
         self.cohort_analysis = CohortAnalysis(self.df)
         self.basket_analysis = BasketAprioriAnalysis(self.df)
 
-    def filter_data(self, since):
+    def filter_data(self, since=None, category=None, **kwargs):
+        since_date = None
+
+        filtered_df = self.df.copy()
         # Get the maximum date in the dataset
-        self.df["InvoiceDate"] = pd.to_datetime(
-            self.df["InvoiceDate"], format="ISO8601"
-        )
-
         max_date = pd.to_datetime(self.df["InvoiceDate"].max())
+        if category:
+            filtered_df = filtered_df[filtered_df["Category"] == category]
+        if since is None:
+            return filtered_df
 
-        # Define the offset based on the input string
-        offset = pd.DateOffset(months=int(since[:-1]))
+        if "-" in since:
+            # Parse the input string
+            periods = since.split("-")
+            main_period = periods[0]
+            sub_period = periods[1]
 
-        # Calculate the since date by subtracting the offset from the maximum date
-        since_date = max_date - offset
+            # Extract numeric values
+            main_value = int(main_period[:-1])
+            sub_value = int(sub_period[:-1])
 
-        # Filter data based on the specified date
-        filtered_df = self.df[self.df["InvoiceDate"] >= since_date]
+            if main_period.endswith("m") and sub_period.endswith("y"):
+                # Last X months of Y years ago
+                reference_date = max_date - relativedelta(years=sub_value)
+                since_date = reference_date - relativedelta(months=main_value)
+            elif main_period.endswith("m") and sub_period.endswith("m"):
+                # Last X months of Y months ago
+                reference_date = max_date - relativedelta(months=sub_value)
+                since_date = reference_date - relativedelta(months=main_value)
+        else:
+            # Single period case
+            if since == "m":
+                main_value = int(since[:-1])
+                since_date = max_date - relativedelta(months=main_value)
+            if since == "y":
+                main_value = int(since[:-13])
+                since_date = max_date - relativedelta(months=main_value)
 
-        # Return the number of unique StockCodes in the filtered dataframe
-        return filtered_df["StockCode"].nunique()
+        since = since_date if since_date else since
 
-    def no_of_products(self, since="all", product_name=""):
+        # Filter data based on the calculated since_date
+        filtered_df = filtered_df[filtered_df["InvoiceDate"] >= since]
+
+        # Return the filtered dataframe
+        return filtered_df
+
+    def no_of_products(self, since="all", product_name="", **kwargs):
         if since == "all":
             return self.df["StockCode"].nunique()
         else:
@@ -244,7 +273,7 @@ class Analyse:
             filtered_df = self.df[self.df["InvoiceDate"] >= since_date]
             return filtered_df["StockCode"].nunique()
 
-    def no_of_customers(self, since="all", product_name=""):
+    def no_of_customers(self, since="all", product_name="", **kwargs):
         if since == "all":
             return self.df["CustomerID"].nunique()
         else:
@@ -254,7 +283,7 @@ class Analyse:
             filtered_df = self.df[self.df["InvoiceDate"] >= since_date]
             return filtered_df["CustomerID"].nunique()
 
-    def category_share(self, since="all", product_name=""):
+    def category_share(self, since="all", product_name="", **kwargs):
         if since == "all":
             total_unique_categories = self.df["Category"].nunique()
             total_categories = len(self.df["Category"])
@@ -265,7 +294,66 @@ class Analyse:
             total_categories = len(filtered_df["Category"])
             return total_unique_categories / total_categories
 
-    def top_branches(self, since="all", product_name="", n=5):
+    def product_shares(self, product_name, **kwargs):
+        # Define the list to store results
+        results = []
+
+        # Obtain the category of the given product name
+        product_category = self.df.loc[
+            self.df["Description"] == product_name, "Category"
+        ].iloc[0]
+
+        # Get the current max date in the data
+        max_date = self.df["InvoiceDate"].max()
+
+        # Loop through the last three months
+        for i in range(3):
+            start_date = max_date - relativedelta(months=i + 1)
+            end_date = max_date - relativedelta(months=i)
+
+            # Filter data for the specific month and category
+            monthly_data = self.df[
+                (self.df["InvoiceDate"] >= start_date)
+                & (self.df["InvoiceDate"] < end_date)
+                & (self.df["Category"] == product_category)
+            ]
+
+            if monthly_data.empty:
+                continue
+
+            # Group by product and calculate the total sales
+            product_sales = monthly_data.groupby("Description")["TotalPrice"].sum()
+
+            # Calculate the total sales
+            total_sales = product_sales.sum()
+
+            # Get the share of the given product
+            product_share = (
+                (product_sales[product_name] / total_sales) * 100
+                if product_name in product_sales
+                else 0
+            )
+            others_share = 100 - product_share
+
+            # Format the month
+            month_formatted = start_date.strftime("%Y %B")
+
+            # Store the result in a dictionary
+            result = {
+                "month": month_formatted,
+                "product_name": product_name,
+                "product_share": product_share,
+                "others_share": others_share,
+            }
+
+            results.append(result)
+
+        return results
+
+    def category_top_sold(self, since="all", category=None, **kwargs):
+        return self.top_sold_products(since=since, category=category)
+
+    def top_branches(self, since="all", product_name="", n=5, **kwargs):
         if since == "all":
             return self.df["Country"].value_counts().head(n).to_dict()
         else:
@@ -275,11 +363,10 @@ class Analyse:
             filtered_df = self.df[self.df["InvoiceDate"] >= since_date]
             return filtered_df["Country"].value_counts().head(n).to_dict()
 
-    def top_sold_products(self, since="all", product_name="", n=5):
-        if since == "all":
-            filtered_df = self.df
-        else:
-            filtered_df = self.filter_data(since)
+    def top_sold_products(
+        self, since="all", product_name="", n=5, category=None, **kwargs
+    ):
+        filtered_df = self.filter_data(since=since, category=category)
 
         # Count occurrences of each product
         product_counts = filtered_df["Description"].value_counts()
@@ -297,6 +384,183 @@ class Analyse:
 
         return sorted_products.to_dict()
 
+    def monthly_sales(self, since="1y", product_name="", **kwargs):
+        if since == "all":
+            filtered_df = self.df
+        else:
+            filtered_df = self.filter_data(since)
+        if product_name != "":
+            filtered_df = filtered_df[filtered_df["Description"] == product_name]
+
+        # Convert 'InvoiceDate' column to datetime format
+        # Extract the month from the 'InvoiceDate' column
+        filtered_df["Month"] = filtered_df["InvoiceDate"].dt.strftime("%Y %B")
+
+        # Group the data by month and count the number of items in each group
+        items_per_month = filtered_df.groupby("Month").size()
+
+        # Endorsement. Ciro
+        # Calculate the total amount spent for each item in each transaction
+        filtered_df["TotalAmount"] = filtered_df["Quantity"] * filtered_df["UnitPrice"]
+
+        # Group the data by year and month, and sum the 'TotalAmount' column for each group
+        monthly_endorsement = (
+            filtered_df.groupby("Month")["TotalAmount"].sum().astype(int)
+        )
+
+        return {
+            "endorsement": monthly_endorsement.to_dict(),
+            "sales_quantity": items_per_month.to_dict(),
+        }
+
+    def compare_monthly_sales(
+        self, since_list=["1m", "1m-1m"], product_name="", **kwargs
+    ):
+        agg_monthly_sales = list()
+        for since in since_list:
+            agg_monthly_sales.append(
+                self.monthly_sales(since=since, product_name=product_name)
+            )
+        return agg_monthly_sales
+
+    def product_shares_comparison(self, product_name, since=None, **kwargs):
+        # Define the list to store results
+        results = []
+
+        # Obtain the category of the given product name
+        product_category = self.df.loc[
+            self.df["Description"] == product_name, "Category"
+        ].iloc[0]
+
+        # Get the current max date in the data
+        max_date = self.df["InvoiceDate"].max()
+
+        # Define time periods
+        periods = [
+            ("Last Month", max_date - relativedelta(months=1), max_date),
+            (
+                "Last Year Same Month",
+                max_date - relativedelta(years=1, months=1),
+                max_date - relativedelta(years=1),
+            ),
+            ("Year to Date", pd.to_datetime(f"{max_date.year}-01-01"), max_date),
+        ]
+
+        # Loop through the defined periods
+        for period_name, start_date, end_date in periods:
+            # Filter data for the specific period and category
+            period_data = self.df[
+                (self.df["InvoiceDate"] >= start_date)
+                & (self.df["InvoiceDate"] < end_date)
+                & (self.df["Category"] == product_category)
+            ]
+
+            if period_data.empty:
+                continue
+
+            # Group by product and calculate the total sales
+            product_sales = period_data.groupby("Description")["TotalPrice"].sum()
+
+            # Calculate the total sales
+            total_sales = product_sales.sum()
+
+            # Get the share of the given product
+            product_share = (
+                (product_sales[product_name] / total_sales) * 100
+                if product_name in product_sales
+                else 0
+            )
+            others_share = 100 - product_share
+
+            # Store the result in a dictionary
+            result = {
+                "period": period_name,
+                "product_name": product_name,
+                "product_share": product_share,
+                "others_share": others_share,
+            }
+
+            results.append(result)
+
+        return results
+
+    def product_sales_chart(self, product_name="", frequency="W", since=None, **kwargs):
+        # Define the period to look back (52 weeks or 12 months)
+        if frequency == "W":
+            num_periods = 52
+            period_label = "Week"
+        elif frequency == "M":
+            num_periods = 12
+            period_label = "Month"
+        else:
+            raise ValueError(
+                "Invalid frequency. Use 'W' for weekly or 'M' for monthly."
+            )
+
+        # Get the current max date in the data
+        max_date = self.df["InvoiceDate"].max()
+
+        # Obtain the category of the given product name
+        product_category = self.df.loc[
+            self.df["Description"] == product_name, "Category"
+        ].iloc[0]
+
+        # Create a date range for the past periods (weeks or months)
+        if frequency == "W":
+            start_date = max_date - pd.DateOffset(weeks=num_periods)
+        elif frequency == "M":
+            start_date = max_date - pd.DateOffset(months=num_periods)
+
+        # Filter the dataframe for the relevant time period and category
+        filtered_df = self.df[
+            (self.df["InvoiceDate"] >= start_date)
+            & (self.df["Category"] == product_category)
+        ]
+
+        # Create a column for the period number (week or month)
+        filtered_df[period_label] = (
+            filtered_df["InvoiceDate"]
+            .dt.to_period(frequency)
+            .apply(lambda r: r.start_time)
+        )
+
+        # Group by period and description, then sum up the quantities
+        period_sales = (
+            filtered_df.groupby([period_label, "Description"])["Quantity"]
+            .sum()
+            .reset_index()
+        )
+
+        # Get period sales for the given product
+        product_period_sales = period_sales[period_sales["Description"] == product_name]
+        product_period_sales = product_period_sales[
+            [period_label, "Quantity"]
+        ].set_index(period_label)
+
+        # Get period sales for the entire category
+        category_period_sales = period_sales.groupby(period_label)["Quantity"].sum()
+
+        # Ensure both series have the same index
+        product_period_sales = product_period_sales.reindex(
+            category_period_sales.index, fill_value=0
+        )
+
+        # Create a DataFrame with both series
+        sales_df = pd.DataFrame(
+            {
+                "Product Sales": product_period_sales["Quantity"],
+                "Category Sales": category_period_sales,
+            }
+        ).reset_index()
+
+        # Format the index for display
+        sales_df.index = sales_df[period_label].dt.strftime("%Y %B")
+
+        return {
+            "data": sales_df[["Product Sales", "Category Sales"]].to_dict(),
+            "graph_name": f"{num_periods} {period_label}s Sales of Product: {product_name} vs. Category: {product_category}",
+        }
+
     def analyse(
         self,
     ):
@@ -309,9 +573,10 @@ class Analyse:
             "rfm_analysis": self.rfm_analysis.analyse(),
             "cohort_analysis": self.cohort_analysis.analyse(),
             "basket_analysis": self.basket_analysis.analyse(),
+            "compare_monthly_sales": self.compare_monthly_sales(),
         }
 
 
-df = CSVIntegrator(file_path="datacleaned.csv").read()
+df = CSVIntegrator(file_path="data_category_added.csv").read()
 
 analyser = Analyse(df=df)

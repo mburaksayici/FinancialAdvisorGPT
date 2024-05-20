@@ -10,15 +10,26 @@ Your answer must be python list, no other comments. Dont ever answer any comment
 You are only allowed to respond either [] or the Python list that contains question strings.
 Here's an  example : 
 Context : "How are my elidor shampoo sales going?"
+One possible answer that you can give is, choosing minimum 3 graphs.
 Answer : [{{"graph": "top_sold_products", "since":"3m", }}, {{"graph":"category_share", "since":"3m"}}, {{"graph":"top_sold_products", "since":"3m"}} ]
+Choose minimum 5 graphs. You need to return at least 5 elements in list. 
 
 Here are the graph explanations, and parameters:
 
 {{"graph":"category_share", "since":"3m"}} : Category share of the given product.   Since means monthly time.
 {{"graph":"top_branches", "since":"3m"}} : Top branches, means a ranking of a franchise or shop of a company with respect to sales.  Since means monthly time.
 {{"graph": "top_sold_products", "since":"3m"}} : Top sold products. Since means monthly time.
+{{"graph": "monthly_sales", "since":"3m"}} : Monthly sales and endorsement of a product. Since means monthly time.  "1m" means last one month. "1m-1m" means between 2 months ago and 1 month ago. "1m-1y" means last month of last year. 
+{{"graph": "compare_monthly_sales", "since_list":["1m", "1m-1m"]}} : Monthly sales and endorsement of a product including the option for analysing multiple dates. "1m" means last one month. "1m-1m" means between 2 months ago and 1 month ago. "1m-1y" means last month of last year. You can fill up since_list multiple ranges you would like to compare. 
+{{"graph": "product_sales_chart", "frequency": "W"}} : Sales of a product and its category for 1 year, either for 52 weeks if frequency = "W", or for 12 months if frequency = "M"
+{{"graph": "product_shares_comparison" }} : Share of a product among the category, for Last Month, Last Year Same Month and Year to Data.  There's no since options for that.
+{{"graph": "product_shares" }} : Share of a product among the category, for last 3 months, each month separate. There's no since options for that.
+
+
+Choose minimum 5 graphs. Parameters are upon your choice, you decide given the context, as a sales analyst or growth engineer.
 
 Context : {context}
+Answer: 
 
 """
 # 5. If there's a date you want to search for, you can return the date, such as 2021-10-10. The date and time of the oldest article you want to get. If no date, don't place from to the dictionary.
