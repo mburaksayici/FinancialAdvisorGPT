@@ -259,7 +259,7 @@ class DashboardChatDriver:
         if first_message:
             enriched_prompt = query
             output = self.dashboard_redirector_agent.conversation(query=query)
-            enriched_prompt = json.dumps(output)
+            enriched_prompt = json.dumps(output["ai_data"])
             conversation = self.chat_prompt.format_messages(
                 question=query, context=enriched_prompt
             )
@@ -283,7 +283,7 @@ class DashboardChatDriver:
             return {
                 "role": "assistant",
                 "content": json.loads(ai_message.content),
-                "graphs": output,
+                "graphs": output["plot_data"],
             }
 
         except Exception:

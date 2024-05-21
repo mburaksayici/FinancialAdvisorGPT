@@ -43,7 +43,7 @@ dashboard_chat_prompt = ChatPromptTemplate.from_messages(
     "bullet_point_3": "Share in gold segments is increasing, but bronze segment sales has decreased significantly.",
     }} 
 
-    Make the content of summary numerically rich. Support your claims with numerical data that you have.
+    Make the content of summary numerically rich, but use two decimals at most. Support your claims with numerical data that you have.
 
     Here's the question : {question}
 

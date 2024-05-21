@@ -54,4 +54,4 @@ class DashboardRedirectorAgent:
         graphs_data = self.graph_result_retrieval_pipeline.query(
             graphs, product_name=product_name
         )
-        return {"graphs": graphs_data, "product_name": product_name}
+        return {"ai_data": graphs_data["ai_data"], "plot_data":graphs_data["plot_data"], "product_name": product_name}

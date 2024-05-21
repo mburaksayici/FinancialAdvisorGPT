@@ -19,15 +19,21 @@ class GraphResultsRetrievalPipeline:
 
     def query(self, query, product_name=None):
         graph_outputs = dict()
+        ai_data = list()
+        plot_data = list()
         for query_graph in query:
             graph_name = query_graph["graph"]
             query_graph.pop("graph")
             query_graph["product_name"] = product_name
-            graph_outputs[graph_name] = getattr(
+            graph_output =  getattr(
                 self.analyser,
                 graph_name,
             )(**query_graph)
-        return graph_outputs
+
+            ai_data.append(graph_output.get("ai_data"))
+            plot_data.append(graph_output.get("plot_data"))
+
+        return {"ai_data":ai_data, "plot_data":plot_data}
 
     def aquery(self, query, product_name=None):
         graph_outputs = dict()

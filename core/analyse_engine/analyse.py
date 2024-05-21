@@ -271,28 +271,35 @@ class Analyse:
             since_date = pd.to_datetime(since, format="%m/%d/%Y %H:%M")
             # Filter data based on the specified date
             filtered_df = self.df[self.df["InvoiceDate"] >= since_date]
-            return filtered_df["StockCode"].nunique()
+            data =  filtered_df["StockCode"].nunique()
+            return {"ai_data": data, "plot_data" :  data }
 
     def no_of_customers(self, since="all", product_name="", **kwargs):
         if since == "all":
-            return self.df["CustomerID"].nunique()
+            data =  self.df["CustomerID"].nunique()
+            return   {"ai_data": data, "plot_data" :  data }  
         else:
             # Convert since to datetime format
             since_date = pd.to_datetime(since, format="%m/%d/%Y %H:%M")
             # Filter data based on the specified date
             filtered_df = self.df[self.df["InvoiceDate"] >= since_date]
-            return filtered_df["CustomerID"].nunique()
+            data = filtered_df["CustomerID"].nunique()
+            return   {"ai_data": data, "plot_data" :  data }     
 
     def category_share(self, since="all", product_name="", **kwargs):
         if since == "all":
             total_unique_categories = self.df["Category"].nunique()
             total_categories = len(self.df["Category"])
-            return total_unique_categories / total_categories
+            data =  total_unique_categories / total_categories
+
+            return    {"ai_data": data, "plot_data" :  data }     
         else:
             filtered_df = self.filter_data(since)
             total_unique_categories = filtered_df["Category"].nunique()
             total_categories = len(filtered_df["Category"])
-            return total_unique_categories / total_categories
+            data  =  total_unique_categories / total_categories
+            return    {"ai_data": data, "plot_data" :  data }     
+
 
     def unique_customers(self, product_name):
         # Define the list to store results
@@ -436,6 +443,7 @@ class Analyse:
     def category_top_sold(self, since="all", category=None, **kwargs):
         return self.top_sold_products(since=since, category=category)
 
+    """
     def top_branches(self, since="all", product_name="", n=5, **kwargs):
         if since == "all":
             return self.df["Country"].value_counts().head(n).to_dict()
@@ -445,7 +453,7 @@ class Analyse:
             # Filter data based on the specified date
             filtered_df = self.df[self.df["InvoiceDate"] >= since_date]
             return filtered_df["Country"].value_counts().head(n).to_dict()
-
+    """
     def top_sold_products(
         self, since="all", product_name="", n=5, category=None, **kwargs
     ):
@@ -465,7 +473,7 @@ class Analyse:
         # Sort by counts
         sorted_products = product_data.sort_values(by="Counts", ascending=False).head(n)
 
-        return sorted_products.to_dict()
+        return {"ai_data": sorted_products.to_dict(), "plot_data" : sorted_products.to_dict()  }
 
     def monthly_sales(self, since="1y", product_name="", **kwargs):
         if since == "all":
@@ -674,18 +682,18 @@ class Analyse:
 
         # Format the index for display
         sales_df.index = sales_df[period_label].dt.strftime("%Y %B")
-
-        return {
+        data = {
             "data": sales_df[["Product Sales", "Category Sales"]].to_dict(),
             "graph_name": f"{num_periods} {period_label}s Sales of Product: {product_name} vs. Category: {product_category}",
         }
+        return {"ai_data" : data, "plot_data": data}
 
     def analyse(
         self,
     ):
         return {
             "top_sold_products": self.top_sold_products(),
-            "top_branches": self.top_branches(),
+            #  "top_branches": self.top_branches(),
             # "category_share":self.category_share(),
             "no_of_customers": self.no_of_customers(),
             "no_of_products": self.no_of_products(),
