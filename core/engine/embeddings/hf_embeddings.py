@@ -1,7 +1,6 @@
 # TO DO : EMBEDDING BASECLASS OR TEMPLATE OR INTERFACE TO BE ADDED.
 
 from langchain.embeddings import HuggingFaceEmbeddings
-import sentence_transformers
 
 embedding = HuggingFaceEmbeddings()  # GPT4AllEmbeddings()
 

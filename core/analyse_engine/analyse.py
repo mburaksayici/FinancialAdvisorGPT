@@ -294,9 +294,83 @@ class Analyse:
             total_categories = len(filtered_df["Category"])
             return total_unique_categories / total_categories
 
+    def unique_customers(self, product_name):
+        # Define the list to store results
+        results = []
+        plot_data = {
+            "graph_type": "linear",
+            "data": {
+                "lines": [
+                    {
+                        "name": "Unique Customers",
+                        "x": [],
+                        "y": []
+                    }
+                ]
+            },
+            "headline": f"Unique Customers for {product_name}",
+            "summary": f"Product: {product_name} - Unique Customers for YTD, MTD, and Last Year Same Month"
+        }
+
+        # Get the current max date in the data
+        max_date = self.df["InvoiceDate"].max()
+
+        # Define time periods
+        periods = [
+            ("Year to Date", pd.to_datetime(f"{max_date.year}-01-01"), max_date),
+            ("Month to Date", pd.to_datetime(f"{max_date.year}-{max_date.month}-01"), max_date),
+            ("Last Year Same Month", 
+                max_date - relativedelta(years=1, months=1),
+                max_date - relativedelta(years=1))
+        ]
+
+        # Loop through the defined periods
+        for period_name, start_date, end_date in periods:
+            # Filter data for the specific period and product
+            period_data = self.df[
+                (self.df["InvoiceDate"] >= start_date)
+                & (self.df["InvoiceDate"] < end_date)
+                & (self.df["Description"] == product_name)
+            ]
+
+            if period_data.empty:
+                unique_customers_count = 0
+            else:
+                # Calculate the unique number of customers
+                unique_customers_count = period_data["CustomerID"].nunique()
+
+            # Store the result in a dictionary
+            result = {
+                "period": period_name,
+                "product_name": product_name,
+                "unique_customers": unique_customers_count
+            }
+
+            results.append(result)
+
+            # Add data for plot
+            plot_data["data"]["lines"][0]["x"].append(period_name)
+            plot_data["data"]["lines"][0]["y"].append(unique_customers_count)
+
+        return {
+            "ai_data": results,
+            "plot_data": plot_data
+        }
+    
+    
+
+
     def product_shares(self, product_name, **kwargs):
         # Define the list to store results
         results = []
+        plot_data = {
+            "graph_type": "pie",
+            "data": {
+                "pies": []
+            },
+            "headline": f"Share of Monthly Revenue for {product_name}",
+            "summary": f"Product: {product_name} vs Others in Category"
+        }
 
         # Obtain the category of the given product name
         product_category = self.df.loc[
@@ -346,9 +420,18 @@ class Analyse:
                 "others_share": others_share,
             }
 
+            plot_data["data"]["pies"].append({
+                "name": month_formatted,
+                "x": ["Product", "Others"],
+                "y": [product_share, others_share]
+            })
+
             results.append(result)
 
-        return results
+        return {
+            "ai_data": results,
+            "plot_data": plot_data
+        }
 
     def category_top_sold(self, since="all", category=None, **kwargs):
         return self.top_sold_products(since=since, category=category)
@@ -394,25 +477,38 @@ class Analyse:
 
         # Convert 'InvoiceDate' column to datetime format
         # Extract the month from the 'InvoiceDate' column
-        filtered_df["Month"] = filtered_df["InvoiceDate"].dt.strftime("%Y %B")
+        filtered_df['Month'] = filtered_df['InvoiceDate'].dt.strftime('%Y %B')
 
         # Group the data by month and count the number of items in each group
-        items_per_month = filtered_df.groupby("Month").size()
+        items_per_month = filtered_df.groupby('Month').size()
 
-        # Endorsement. Ciro
+        # revenue. Ciro
         # Calculate the total amount spent for each item in each transaction
-        filtered_df["TotalAmount"] = filtered_df["Quantity"] * filtered_df["UnitPrice"]
+        filtered_df['TotalAmount'] = filtered_df['Quantity'] * filtered_df['UnitPrice']
 
         # Group the data by year and month, and sum the 'TotalAmount' column for each group
-        monthly_endorsement = (
-            filtered_df.groupby("Month")["TotalAmount"].sum().astype(int)
-        )
+        monthly_revenue = filtered_df.groupby('Month')['TotalAmount'].sum().astype(int)
 
-        return {
-            "endorsement": monthly_endorsement.to_dict(),
-            "sales_quantity": items_per_month.to_dict(),
+        # Prepare plot_data
+        plot_data = {
+            "graph_type": "linear",
+            "data": {
+                "lines": [
+                    {"name": "Quantity", "x":  list(items_per_month.index), "y": [int(i) for i in list(monthly_revenue.values)]},
+                    {"name": "Revenue", "x":   list(items_per_month.index), "y": [int(i) for i in list(monthly_revenue.values)]}
+                ],
+                "headline": f"Monthly Revenue & Quantity of Product: {product_name}"
+            }
         }
 
+        return {
+            "ai_data": {
+                "revenue": monthly_revenue.to_dict(),
+                "sales_quantity": items_per_month.to_dict()
+            },
+            "plot_data": plot_data
+        }
+    
     def compare_monthly_sales(
         self, since_list=["1m", "1m-1m"], product_name="", **kwargs
     ):
@@ -426,6 +522,18 @@ class Analyse:
     def product_shares_comparison(self, product_name, since=None, **kwargs):
         # Define the list to store results
         results = []
+        plot_data = {
+                "graph_type": "pie",
+                "data": {
+                    "pies": [
+                        
+                    ]
+                },
+                "headline": f"Share of Monthly Revenue for {product_name}",
+                "summary": f"Product: {product_name} vs Others in Category"
+            }
+
+
 
         # Obtain the category of the given product name
         product_category = self.df.loc[
@@ -480,9 +588,20 @@ class Analyse:
                 "others_share": others_share,
             }
 
+            plot_data["data"]["pies"].append({
+                            "name": period_name,
+                            "x": ["Product", "Others"],
+                            "y": [product_share, others_share]
+                        })
+
+            # Prepare plot_data for each period
+
             results.append(result)
 
-        return results
+        return {
+                "ai_data": result,
+                "plot_data": plot_data
+            }
 
     def product_sales_chart(self, product_name="", frequency="W", since=None, **kwargs):
         # Define the period to look back (52 weeks or 12 months)
