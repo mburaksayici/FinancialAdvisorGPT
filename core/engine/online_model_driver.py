@@ -2,6 +2,7 @@ from logging_stack import logger
 from queue import Empty
 from threading import Thread
 import traceback
+import ast 
 import os
 
 from langchain.chains import RetrievalQA
@@ -282,7 +283,7 @@ class DashboardChatDriver:
 
             return {
                 "role": "assistant",
-                "content": json.loads(ai_message.content),
+                "content": ast.literal_eval(ai_message.content),
                 "graphs": output["plot_data"],
             }
 

@@ -301,68 +301,74 @@ class Analyse:
             return    {"ai_data": data, "plot_data" :  data }     
 
 
-    def unique_customers(self, product_name):
+    def unique_customers(self, product_name, since="ytd", frequency="m"):
+        since = "ytd"
         # Define the list to store results
         results = []
         plot_data = {
             "graph_type": "linear",
-            "data": {
-                "lines": [
-                    {
-                        "name": "Unique Customers",
-                        "x": [],
-                        "y": []
-                    }
-                ]
-            },
+            "data": {"lines": [{"name": "Unique Customers", "x": [], "y": []}]},
             "headline": f"Unique Customers for {product_name}",
-            "summary": f"Product: {product_name} - Unique Customers for YTD, MTD, and Last Year Same Month"
+            "summary": f"Product: {product_name} - Unique Customers for selected period",
         }
 
         # Get the current max date in the data
         max_date = self.df["InvoiceDate"].max()
 
-        # Define time periods
-        periods = [
-            ("Year to Date", pd.to_datetime(f"{max_date.year}-01-01"), max_date),
-            ("Month to Date", pd.to_datetime(f"{max_date.year}-{max_date.month}-01"), max_date),
-            ("Last Year Same Month", 
-                max_date - relativedelta(years=1, months=1),
-                max_date - relativedelta(years=1))
+        # Define time periods based on `since` parameter
+        if since == "ytd":
+            start_date = pd.to_datetime(f"{max_date.year}-01-01")
+        elif since == "mtd":
+            start_date = pd.to_datetime(f"{max_date.year}-{max_date.month}-01")
+        else:
+            raise ValueError("Invalid 'since' parameter. Use 'ytd' or 'mtd'.")
+
+        # Filter data for the specific period and product
+        period_data = self.df[
+            (self.df["InvoiceDate"] >= start_date)
+            & (self.df["InvoiceDate"] <= max_date)
+            & (self.df["Description"] == product_name)
         ]
 
-        # Loop through the defined periods
-        for period_name, start_date, end_date in periods:
-            # Filter data for the specific period and product
-            period_data = self.df[
-                (self.df["InvoiceDate"] >= start_date)
-                & (self.df["InvoiceDate"] < end_date)
-                & (self.df["Description"] == product_name)
-            ]
+        if frequency == "w":
+            # Group by week
+            period_data["Week"] = (
+                period_data["InvoiceDate"]
+                .dt.to_period("W")
+                .apply(lambda r: r.start_time)
+            )
+            grouped_data = (
+                period_data.groupby("Week")["CustomerID"].nunique().reset_index()
+            )
+            grouped_data.columns = ["Period", "UniqueCustomers"]
+        elif frequency == "m":
+            # Group by month
+            period_data["Month"] = (
+                period_data["InvoiceDate"]
+                .dt.to_period("M")
+                .apply(lambda r: r.start_time)
+            )
+            grouped_data = (
+                period_data.groupby("Month")["CustomerID"].nunique().reset_index()
+            )
+            grouped_data.columns = ["Period", "UniqueCustomers"]
+        else:
+            raise ValueError(
+                "Invalid 'frequency' parameter. Use 'w' for weekly or 'm' for monthly."
+            )
 
-            if period_data.empty:
-                unique_customers_count = 0
-            else:
-                # Calculate the unique number of customers
-                unique_customers_count = period_data["CustomerID"].nunique()
-
-            # Store the result in a dictionary
+        # Add data to results and plot_data
+        for _, row in grouped_data.iterrows():
             result = {
-                "period": period_name,
+                "period": row["Period"].strftime("%Y %B"),
                 "product_name": product_name,
-                "unique_customers": unique_customers_count
+                "unique_customers": row["UniqueCustomers"],
             }
-
             results.append(result)
+            plot_data["data"]["lines"][0]["x"].append(row["Period"].strftime("%Y %B"))
+            plot_data["data"]["lines"][0]["y"].append(row["UniqueCustomers"])
 
-            # Add data for plot
-            plot_data["data"]["lines"][0]["x"].append(period_name)
-            plot_data["data"]["lines"][0]["y"].append(unique_customers_count)
-
-        return {
-            "ai_data": results,
-            "plot_data": plot_data
-        }
+        return {"ai_data": results, "plot_data": plot_data}
     
     
 
@@ -490,23 +496,31 @@ class Analyse:
         # Group the data by month and count the number of items in each group
         items_per_month = filtered_df.groupby('Month').size()
 
-        # revenue. Ciro
         # Calculate the total amount spent for each item in each transaction
         filtered_df['TotalAmount'] = filtered_df['Quantity'] * filtered_df['UnitPrice']
 
         # Group the data by year and month, and sum the 'TotalAmount' column for each group
         monthly_revenue = filtered_df.groupby('Month')['TotalAmount'].sum().astype(int)
+        monthly_quantity = filtered_df.groupby('Month')['Quantity'].sum().astype(int)
+
+        # Ensure the data is ordered by month
+        months = pd.date_range(start=filtered_df['InvoiceDate'].min(), end=filtered_df['InvoiceDate'].max(), freq='MS')
+        months_str = months.strftime('%Y %B')
+
+        # Fill in missing months with zero revenue and quantity
+        monthly_revenue = monthly_revenue.reindex(months_str, fill_value=0)
+        monthly_quantity = monthly_quantity.reindex(months_str, fill_value=0)
 
         # Prepare plot_data
         plot_data = {
             "graph_type": "linear",
             "data": {
                 "lines": [
-                    {"name": "Quantity", "x":  list(items_per_month.index), "y": [int(i) for i in list(monthly_revenue.values)]},
-                    {"name": "Revenue", "x":   list(items_per_month.index), "y": [int(i) for i in list(monthly_revenue.values)]}
+                    {"name": "Quantity", "x": months_str.tolist(), "y": monthly_quantity.values.tolist()},
+                    {"name": "Revenue", "x": months_str.tolist(), "y": monthly_revenue.values.tolist()}
                 ],
-                "headline": f"Monthly Revenue & Quantity of Product: {product_name}"
-            }
+            },
+            "headline": f"Monthly Revenue & Quantity of Product",
         }
 
         return {
@@ -515,8 +529,8 @@ class Analyse:
                 "sales_quantity": items_per_month.to_dict()
             },
             "plot_data": plot_data
-        }
-    
+        }    
+
     def compare_monthly_sales(
         self, since_list=["1m", "1m-1m"], product_name="", **kwargs
     ):
@@ -525,7 +539,7 @@ class Analyse:
             agg_monthly_sales.append(
                 self.monthly_sales(since=since, product_name=product_name)
             )
-        return agg_monthly_sales
+        return agg_monthly_sales[0]
 
     def product_shares_comparison(self, product_name, since=None, **kwargs):
         # Define the list to store results
@@ -537,7 +551,7 @@ class Analyse:
                         
                     ]
                 },
-                "headline": f"Share of Monthly Revenue for {product_name}",
+                "headline": f"Share of Monthly Revenue",
                 "summary": f"Product: {product_name} vs Others in Category"
             }
 
@@ -598,7 +612,7 @@ class Analyse:
 
             plot_data["data"]["pies"].append({
                             "name": period_name,
-                            "x": ["Product", "Others"],
+                            "x": ["Product", "Others in Category"],
                             "y": [product_share, others_share]
                         })
 
@@ -682,11 +696,86 @@ class Analyse:
 
         # Format the index for display
         sales_df.index = sales_df[period_label].dt.strftime("%Y %B")
-        data = {
-            "data": sales_df[["Product Sales", "Category Sales"]].to_dict(),
-            "graph_name": f"{num_periods} {period_label}s Sales of Product: {product_name} vs. Category: {product_category}",
+
+        # Prepare plot_data
+        plot_data = {
+            "graph_type": "linear",
+            "data": {
+                "lines": [
+                    {
+                        "name": "Product Sales",
+                        "x": sales_df[period_label].dt.strftime("%Y %B").tolist(),
+                        "y": sales_df["Product Sales"].tolist()
+                    },
+                    {
+                        "name": "Category Sales",
+                        "x": sales_df[period_label].dt.strftime("%Y %B").tolist(),
+                        "y": sales_df["Category Sales"].tolist()
+                    }
+                ]
+            },
+            "headline": f"Sales of Product",
+            "summary": f"{period_label}s Sales of Product: {product_name} vs. Category: {product_category}"
         }
-        return {"ai_data" : data, "plot_data": data}
+
+        return {"ai_data": plot_data, "plot_data": plot_data}
+
+    def average_basket_size(self, product_name, since="ytd"):
+        since = "ytd"
+        # Define the list to store results
+        results = []
+        plot_data = {
+            "graph_type": "linear",
+            "data": {"lines": [{"name": "Average Basket Size", "x": [], "y": []}]},
+            "headline": f"Average Basket Size",
+            "summary": f"Product: {product_name} - Average Basket Size for selected period",
+        }
+
+        # Get the current max date in the data
+        max_date = self.df["InvoiceDate"].max()
+
+        # Define time periods based on `since` parameter
+        if since == "ytd":
+            start_date = pd.to_datetime(f"{max_date.year}-01-01")
+        elif since == "mtd":
+            start_date = pd.to_datetime(f"{max_date.year}-{max_date.month}-01")
+        else:
+            raise ValueError("Invalid 'since' parameter. Use 'ytd' or 'mtd'.")
+
+        # Filter data for the specific period and product
+        period_data = self.df[
+            (self.df["InvoiceDate"] >= start_date)
+            & (self.df["InvoiceDate"] <= max_date)
+            & (self.df["Description"] == product_name)
+        ]
+
+        # Group by month
+        period_data["Month"] = (
+            period_data["InvoiceDate"].dt.to_period("M").apply(lambda r: r.start_time)
+        )
+        grouped_data = (
+            period_data.groupby("Month")
+            .agg(Revenue=("UnitPrice", "sum"), Baskets=("InvoiceNo", "nunique"))
+            .reset_index()
+        )
+
+        # Calculate average basket size
+        grouped_data["AverageBasketSize"] = (
+            grouped_data["Revenue"] / grouped_data["Baskets"]
+        )
+
+        # Add data to results and plot_data
+        for _, row in grouped_data.iterrows():
+            result = {
+                "period": row["Month"].strftime("%Y-%m"),
+                "product_name": product_name,
+                "average_basket_size": row["AverageBasketSize"],
+            }
+            results.append(result)
+            plot_data["data"]["lines"][0]["x"].append(row["Month"].strftime("%Y-%m"))
+            plot_data["data"]["lines"][0]["y"].append(row["AverageBasketSize"])
+
+        return {"ai_data": results, "plot_data": plot_data}
 
     def analyse(
         self,

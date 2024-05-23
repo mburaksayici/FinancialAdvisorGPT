@@ -10,9 +10,9 @@ Your answer must be python list, no other comments. Dont ever answer any comment
 You are only allowed to respond either [] or the Python list that contains question strings.
 Here's an  example : 
 Context : "How are my elidor shampoo sales going?"
-One possible answer that you can give is, choosing minimum 3 graphs.
+One possible answer that you can give is.
 Answer : [{{"graph": "top_sold_products", "since":"3m", }}, {{"graph":"category_share", "since":"3m"}}, {{"graph":"top_sold_products", "since":"3m"}} ]
-Choose minimum 5 graphs. You need to return at least 5 elements in list. 
+Those graphs are must be included : "category_share" "monthly_sales" "product_sales_chart" "product_shares_comparison" "average_basket_size" "product_shares"
 
 Here are the graph explanations, and parameters:
 
@@ -24,13 +24,15 @@ Here are the graph explanations, and parameters:
 {{"graph": "product_sales_chart", "frequency": "W"}} : Sales of a product and its category for 1 year, either for 52 weeks if frequency = "W", or for 12 months if frequency = "M"
 {{"graph": "product_shares_comparison" }} : Share of a product among the category, for Last Month, Last Year Same Month and Year to Data.  There's no since options for that.
 {{"graph": "product_shares" }} : Share of a product among the category, for last 3 months, each month separate. There's no since options for that.
-{{"graph": "unique_customers" }} : Unique customers for given product, in "Year to Date", "Month to Date", and "Last Year Same Month".
+{{"graph": "unique_customers", since="ytd" }} : Unique customers for given product, in either "Year to Date" as "ytd", "Month to Date" as "mtd". 
+{{"graph": "average_basket_size", since="ytd" }} : Average basket size given product, in either "Year to Date" as "ytd", "Month to Date" as "mtd". 
+
+Those graphs are must be included : category_share monthly_sales product_sales_chart product_shares_comparison average_basket_size product_shares
 
 
 
 
-
-Choose minimum 5 graphs. Parameters are upon your choice, you decide given the context, as a sales analyst or growth engineer.
+Choose all graphs. Parameters are upon your choice, you decide given the context, as a sales analyst or growth engineer.
 
 Context : {context}
 Answer: 
